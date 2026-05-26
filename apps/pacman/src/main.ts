@@ -16,7 +16,6 @@ type Ghost = Actor & {
   color: string;
   mode: GhostMode;
   scatterTarget: Tile;
-  releaseDelay: number;
   eaten: boolean;
 };
 
@@ -250,10 +249,6 @@ class PacmanScene extends Scene {
 
   private updateGhosts(dt: number): void {
     for (const ghost of this.ghosts) {
-      ghost.releaseDelay = Math.max(0, ghost.releaseDelay - dt);
-      if (ghost.releaseDelay > 0) {
-        continue;
-      }
       const speed = ghost.mode === "frightened" ? 4.2 : ghost.mode === "eyes" ? 10 : this.ghostSpeed(ghost);
       this.moveActor(ghost, dt * speed, () => this.chooseGhostDirection(ghost));
       if (ghost.mode === "eyes" && ghost.tile.x === ghost.start.x && ghost.tile.y === ghost.start.y) {
@@ -293,7 +288,9 @@ class PacmanScene extends Scene {
       const options = this.validDirections(ghost).filter((direction) => direction !== opposite[ghost.direction]);
       return options[Math.floor(Math.random() * options.length)] ?? opposite[ghost.direction];
     }
-    const target = ghost.mode === "eyes" ? ghost.start : ghost.mode === "scatter" ? ghost.scatterTarget : this.chaseTarget(ghost);
+    const target = this.ghostExitTarget(ghost) ?? (
+      ghost.mode === "eyes" ? ghost.start : ghost.mode === "scatter" ? ghost.scatterTarget : this.chaseTarget(ghost)
+    );
     const options = this.validDirections(ghost).filter((direction) => direction !== opposite[ghost.direction]);
     const viable = options.length > 0 ? options : this.validDirections(ghost);
     return viable.reduce((best, direction) => {
@@ -316,6 +313,14 @@ class PacmanScene extends Scene {
       return { x: ahead.x + (ahead.x - blinky.tile.x), y: ahead.y + (ahead.y - blinky.tile.y) };
     }
     return this.distance(ghost.tile, this.pacman.tile) > 8 ? { ...this.pacman.tile } : ghost.scatterTarget;
+  }
+
+  private ghostExitTarget(ghost: Ghost): Tile | null {
+    if (ghost.mode === "eyes") {
+      return null;
+    }
+    const inHouse = ghost.tile.x >= 11 && ghost.tile.x <= 16 && ghost.tile.y >= 12 && ghost.tile.y <= 15;
+    return inHouse ? { x: 13, y: 11 } : null;
   }
 
   private collectAtPacman(): void {
@@ -401,10 +406,10 @@ class PacmanScene extends Scene {
 
   private createGhosts(): Ghost[] {
     return [
-      this.createGhost("blinky", "#ff3f5f", { x: 13, y: 11 }, { x: 26, y: -2 }, 0, "left"),
-      this.createGhost("pinky", "#ff7bd5", { x: 13, y: 14 }, { x: 1, y: -2 }, 1.2, "up"),
-      this.createGhost("inky", "#40e0ff", { x: 12, y: 14 }, { x: 26, y: 32 }, 5, "up"),
-      this.createGhost("clyde", "#ffad42", { x: 15, y: 14 }, { x: 1, y: 32 }, 9, "up")
+      this.createGhost("blinky", "#ff3f5f", { x: 13, y: 11 }, { x: 26, y: -2 }, "left"),
+      this.createGhost("pinky", "#ff7bd5", { x: 13, y: 14 }, { x: 1, y: -2 }, "up"),
+      this.createGhost("inky", "#40e0ff", { x: 12, y: 14 }, { x: 26, y: 32 }, "up"),
+      this.createGhost("clyde", "#ffad42", { x: 15, y: 14 }, { x: 1, y: 32 }, "up")
     ];
   }
 
@@ -413,7 +418,6 @@ class PacmanScene extends Scene {
     color: string,
     start: Tile,
     scatterTarget: Tile,
-    releaseDelay: number,
     direction: Direction
   ): Ghost {
     return {
@@ -425,7 +429,6 @@ class PacmanScene extends Scene {
       direction,
       nextDirection: direction,
       progress: 0,
-      releaseDelay,
       mode: this.mode,
       eaten: false
     };
