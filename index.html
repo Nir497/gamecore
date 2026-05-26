@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gamecore Arcade</title>
     <link rel="stylesheet" href="./src/home/styles.css" />
-    <script type="module" src="./src/home/main.ts"></script>
   </head>
   <body>
     <main class="shell">
@@ -89,5 +88,29 @@
       </section>
       <p class="empty" id="empty-message" hidden>No games match your search.</p>
     </main>
+    <script>
+      const gameSearch = document.querySelector("#game-search");
+      const emptyMessage = document.querySelector("#empty-message");
+      const gameCards = [...document.querySelectorAll(".game-card")];
+
+      function filterGames() {
+        const query = gameSearch.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        for (const card of gameCards) {
+          const searchableText = `${card.dataset.gameName || ""} ${card.textContent || ""}`.toLowerCase();
+          const isVisible = searchableText.includes(query);
+          card.hidden = !isVisible;
+          if (isVisible) {
+            visibleCount += 1;
+          }
+        }
+
+        emptyMessage.hidden = visibleCount > 0;
+      }
+
+      gameSearch.addEventListener("input", filterGames);
+      filterGames();
+    </script>
   </body>
 </html>
