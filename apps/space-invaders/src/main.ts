@@ -177,6 +177,15 @@ class SpaceInvadersScene extends Scene {
   }
 
   override render2D(ctx: CanvasRenderingContext2D): void {
+    const viewportWidth = this.game.canvas.width;
+    const viewportHeight = this.game.canvas.height;
+    const scale = Math.min(viewportWidth / width, viewportHeight / height);
+    const offsetX = (viewportWidth - width * scale) / 2;
+    const offsetY = (viewportHeight - height * scale) / 2;
+
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
     this.drawBackground(ctx);
     this.drawHud(ctx);
     this.drawUfo(ctx);
@@ -187,6 +196,7 @@ class SpaceInvadersScene extends Scene {
     this.drawGround(ctx);
     this.drawParticles(ctx);
     this.drawMessage(ctx);
+    ctx.restore();
   }
 
   private readInput(dt: number): void {
@@ -979,10 +989,18 @@ async function main(): Promise<void> {
     throw new Error("Missing #game canvas");
   }
 
+  const resizeCanvas = (): void => {
+    const pixelRatio = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.floor(window.innerWidth * pixelRatio));
+    canvas.height = Math.max(1, Math.floor(window.innerHeight * pixelRatio));
+  };
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+
   const game = createGame({
     canvas,
-    width,
-    height,
+    width: canvas.width,
+    height: canvas.height,
     background: "#050711",
     pixelArt: false
   });
