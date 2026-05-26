@@ -96,10 +96,22 @@ p {
   box-shadow: 0 0 0 3px rgba(69, 183, 209, 0.22);
 }
 
+.results {
+  min-height: 18px;
+  color: #9eb0c4;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+}
+
 .game-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 20px;
+}
+
+.game-card[hidden] {
+  display: none;
 }
 
 .game-card {

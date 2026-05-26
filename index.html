@@ -17,6 +17,7 @@
         <label class="search">
           <span>Search</span>
           <input id="game-search" type="search" autocomplete="off" placeholder="Find a game" />
+          <span class="results" id="search-results" aria-live="polite">Showing all games</span>
         </label>
       </header>
 
@@ -89,28 +90,38 @@
       <p class="empty" id="empty-message" hidden>No games match your search.</p>
     </main>
     <script>
-      const gameSearch = document.querySelector("#game-search");
-      const emptyMessage = document.querySelector("#empty-message");
-      const gameCards = [...document.querySelectorAll(".game-card")];
+      window.addEventListener("DOMContentLoaded", () => {
+        const gameSearch = document.querySelector("#game-search");
+        const emptyMessage = document.querySelector("#empty-message");
+        const resultMessage = document.querySelector("#search-results");
+        const gameCards = [...document.querySelectorAll(".game-card")];
 
-      function filterGames() {
-        const query = gameSearch.value.trim().toLowerCase();
-        let visibleCount = 0;
+        function filterGames() {
+          const query = gameSearch.value.trim().toLowerCase();
+          let visibleCount = 0;
 
-        for (const card of gameCards) {
-          const searchableText = `${card.dataset.gameName || ""} ${card.textContent || ""}`.toLowerCase();
-          const isVisible = searchableText.includes(query);
-          card.hidden = !isVisible;
-          if (isVisible) {
-            visibleCount += 1;
+          for (const card of gameCards) {
+            const searchableText = `${card.dataset.gameName || ""} ${card.textContent || ""}`.toLowerCase();
+            const isVisible = searchableText.includes(query);
+            card.hidden = !isVisible;
+            card.setAttribute("aria-hidden", String(!isVisible));
+            if (isVisible) {
+              visibleCount += 1;
+            }
           }
+
+          emptyMessage.hidden = visibleCount > 0;
+          resultMessage.textContent = query
+            ? `Showing ${visibleCount} of ${gameCards.length} games`
+            : "Showing all games";
         }
 
-        emptyMessage.hidden = visibleCount > 0;
-      }
+        for (const eventName of ["input", "search", "keyup", "change"]) {
+          gameSearch.addEventListener(eventName, filterGames);
+        }
 
-      gameSearch.addEventListener("input", filterGames);
-      filterGames();
+        filterGames();
+      });
     </script>
   </body>
 </html>
