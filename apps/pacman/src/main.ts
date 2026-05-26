@@ -1,4 +1,11 @@
 import "./styles.css";
+import chompSoundUrl from "../assets/audio/chomp.wav?url";
+import deathSoundUrl from "../assets/audio/death.wav?url";
+import eatGhostSoundUrl from "../assets/audio/eat-ghost.wav?url";
+import energizerSoundUrl from "../assets/audio/energizer.wav?url";
+import fruitSoundUrl from "../assets/audio/fruit.wav?url";
+import levelClearSoundUrl from "../assets/audio/level-clear.wav?url";
+import startSoundUrl from "../assets/audio/start.wav?url";
 import { createGame, Scene } from "../../../src/engine";
 
 type Direction = "up" | "down" | "left" | "right" | "none";
@@ -30,6 +37,17 @@ const powerPelletScore = 50;
 const dotScore = 10;
 const ghostScores = [200, 400, 800, 1600];
 const fruitScores = [100, 300, 500, 700, 1000, 2000, 3000, 5000];
+const soundFiles = {
+  chomp: chompSoundUrl,
+  death: deathSoundUrl,
+  eatGhost: eatGhostSoundUrl,
+  energizer: energizerSoundUrl,
+  fruit: fruitSoundUrl,
+  levelClear: levelClearSoundUrl,
+  start: startSoundUrl
+} as const;
+
+type SoundName = keyof typeof soundFiles;
 
 const mazeRows = [
   "############################",
@@ -102,8 +120,18 @@ class PacmanScene extends Scene {
   private fruit: Tile | null = null;
   private fruitTimer = 0;
   private fruitSpawnedAt = new Set<number>();
+  private sounds: Partial<Record<SoundName, HTMLAudioElement>> = {};
   private pacman: Actor = this.createPacman();
   private ghosts: Ghost[] = this.createGhosts();
+
+  override async preload(): Promise<void> {
+    await Promise.all(
+      Object.entries(soundFiles).map(async ([name, url]) => {
+        this.sounds[name as SoundName] = await this.game.assets.audio(`pacman:${name}`, url);
+      })
+    );
+    this.game.audio.setVolume(0.72);
+  }
 
   override start(): void {
     this.resetBoard();
@@ -132,6 +160,7 @@ class PacmanScene extends Scene {
       this.running = false;
       this.roundMessage = "LEVEL CLEAR";
       this.messageTimer = 1.2;
+      this.playSound("levelClear");
       window.setTimeout(() => {
         this.resetBoard();
         this.roundMessage = "SPACE TO START";
@@ -211,6 +240,7 @@ class PacmanScene extends Scene {
       if (!this.running) {
         this.running = true;
         this.roundMessage = "";
+        this.playSound("start");
       }
     }
     if (input.isKeyDown("ArrowLeft") || input.isKeyDown("KeyA")) this.pacman.nextDirection = "left";
@@ -337,6 +367,7 @@ class PacmanScene extends Scene {
       this.dotsEaten += 1;
       this.totalPellets -= 1;
       this.maybeSpawnFruit();
+      this.playSound("chomp");
     }
     if (this.powerPellets.delete(key)) {
       this.addScore(powerPelletScore);
@@ -344,6 +375,7 @@ class PacmanScene extends Scene {
       this.totalPellets -= 1;
       this.frightenedTimer = this.frightenedDuration();
       this.ghostCombo = 0;
+      this.playSound("energizer");
       for (const ghost of this.ghosts) {
         if (ghost.mode !== "eyes") {
           ghost.mode = "frightened";
@@ -355,6 +387,7 @@ class PacmanScene extends Scene {
       this.addScore(fruitScores[Math.min(this.level - 1, fruitScores.length - 1)]);
       this.fruit = null;
       this.fruitTimer = 0;
+      this.playSound("fruit");
     }
   }
 
@@ -371,10 +404,12 @@ class PacmanScene extends Scene {
         ghost.eaten = true;
         ghost.direction = "up";
         ghost.progress = 0;
+        this.playSound("eatGhost");
       } else if (ghost.mode !== "eyes") {
         this.lives -= 1;
         this.roundMessage = this.lives > 0 ? "READY" : "GAME OVER";
         this.messageTimer = 1.2;
+        this.playSound("death");
         this.resetLife();
         break;
       }
@@ -399,6 +434,15 @@ class PacmanScene extends Scene {
       this.lives = Math.min(6, this.lives + 1);
       this.extraLifeAwarded = true;
     }
+  }
+
+  private playSound(name: SoundName): void {
+    const sound = this.sounds[name];
+    if (!sound) {
+      return;
+    }
+    const clip = sound.cloneNode(true) as HTMLAudioElement;
+    this.game.audio.play(clip, { restart: true });
   }
 
   private createPacman(): Actor {
