@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="3D test game placeholder">
+  <rect width="800" height="600" fill="#0d121a"/>
+  <path d="M116 452l220-252h128l220 252z" fill="#182333"/>
+  <path d="M400 112l150 86v172l-150 86-150-86V198z" fill="#1d2a3a"/>
+  <path d="M400 112v172l150-86M400 284l-150-86M400 284v172" fill="none" stroke="#70d6ff" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M400 112l150 86-150 86-150-86z" fill="#f7c948" opacity=".42"/>
+  <circle cx="590" cy="118" r="30" fill="#ff5c8a"/>
+  <text x="400" y="532" fill="#d8e2ee" font-family="Arial, sans-serif" font-size="38" font-weight="700" text-anchor="middle">3D TEST</text>
+</svg>

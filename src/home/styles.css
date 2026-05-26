@@ -1,6 +1,6 @@
 :root {
   color: #edf2f7;
-  background: #0c1016;
+  background: #090c11;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -16,35 +16,57 @@ body {
 
 body {
   background:
-    linear-gradient(180deg, rgba(23, 30, 40, 0.95), rgba(12, 16, 22, 1)),
-    #0c1016;
+    radial-gradient(circle at 18% 8%, rgba(69, 183, 209, 0.24), transparent 30%),
+    radial-gradient(circle at 84% 0%, rgba(247, 201, 72, 0.14), transparent 28%),
+    linear-gradient(180deg, #111823 0%, #090c11 48%, #080b10 100%);
 }
 
 .shell {
-  width: min(1180px, calc(100% - 32px));
+  width: min(1220px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 32px 0 48px;
+  padding: 38px 0 56px;
 }
 
 .topbar {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 28px;
+  min-height: 178px;
+  margin-bottom: 30px;
+  padding: 28px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(20, 28, 40, 0.92), rgba(12, 17, 24, 0.76)),
+    #111821;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: #70d6ff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 h1 {
   margin: 0;
-  font-size: 44px;
+  font-size: clamp(42px, 7vw, 84px);
   line-height: 1;
   font-weight: 800;
+  color: #ffffff;
 }
 
 p {
-  margin: 10px 0 0;
-  color: #aab6c6;
-  font-size: 17px;
+  max-width: 520px;
+  margin: 12px 0 0;
+  color: #b9c6d6;
+  font-size: 18px;
+  line-height: 1.45;
 }
 
 .search {
@@ -59,12 +81,12 @@ p {
 
 .search input {
   width: 100%;
-  height: 44px;
-  border: 1px solid #354152;
+  height: 48px;
+  border: 1px solid #3a485c;
   border-radius: 8px;
-  background: #111821;
+  background: rgba(5, 9, 14, 0.76);
   color: #f8fafc;
-  padding: 0 14px;
+  padding: 0 16px;
   font-size: 16px;
   outline: none;
 }
@@ -76,21 +98,24 @@ p {
 
 .game-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
 }
 
 .game-card {
   position: relative;
   display: block;
-  aspect-ratio: 4 / 3;
+  min-height: 265px;
+  aspect-ratio: 3 / 3.4;
   overflow: hidden;
-  border: 1px solid #263242;
+  border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 8px;
-  background: #151c26;
+  background: #131b26;
   color: #ffffff;
   text-decoration: none;
   isolation: isolate;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
 .game-card img {
@@ -106,10 +131,18 @@ p {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(5, 8, 12, 0.05), rgba(5, 8, 12, 0.82));
-  opacity: 0;
+  background:
+    linear-gradient(180deg, rgba(5, 8, 12, 0.02) 0%, rgba(5, 8, 12, 0.35) 48%, rgba(5, 8, 12, 0.92) 100%);
+  opacity: 1;
   transition: opacity 180ms ease;
   z-index: 1;
+}
+
+.game-card:hover,
+.game-card:focus-visible {
+  border-color: rgba(112, 214, 255, 0.72);
+  transform: translateY(-4px);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
 }
 
 .game-card:hover img,
@@ -128,24 +161,42 @@ p {
   outline-offset: 3px;
 }
 
-.game-title {
+.game-info {
   position: absolute;
   left: 16px;
   right: 16px;
   bottom: 16px;
+  display: grid;
+  gap: 7px;
   z-index: 2;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transform: translateY(24px);
+  transition: transform 180ms ease;
+}
+
+.game-title {
   font-size: 22px;
   line-height: 1.15;
   font-weight: 800;
+  color: #ffffff;
 }
 
-.game-card:hover .game-title,
-.game-card:focus-visible .game-title {
-  opacity: 1;
+.game-description {
+  max-width: 92%;
+  color: #c9d4e2;
+  font-size: 14px;
+  line-height: 1.35;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.game-card:hover .game-info,
+.game-card:focus-visible .game-info {
   transform: translateY(0);
+}
+
+.game-card:hover .game-description,
+.game-card:focus-visible .game-description {
+  opacity: 1;
 }
 
 .status {
@@ -153,13 +204,14 @@ p {
   top: 12px;
   right: 12px;
   z-index: 2;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
   padding: 6px 9px;
-  background: rgba(8, 12, 18, 0.72);
+  background: rgba(8, 12, 18, 0.78);
   color: #d8e2ee;
   font-size: 12px;
   font-weight: 700;
+  backdrop-filter: blur(10px);
 }
 
 .status-ready {
@@ -181,6 +233,8 @@ p {
   .topbar {
     display: grid;
     align-items: stretch;
+    min-height: auto;
+    padding: 22px;
   }
 
   h1 {
@@ -188,11 +242,19 @@ p {
   }
 
   .game-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
     gap: 12px;
+  }
+
+  .game-card {
+    min-height: 210px;
   }
 
   .game-title {
     font-size: 18px;
+  }
+
+  .game-description {
+    font-size: 13px;
   }
 }

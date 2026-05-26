@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="2D test game placeholder">
+  <rect width="800" height="600" fill="#0c1119"/>
+  <path d="M80 120h640v360H80z" fill="#151f2d" stroke="#70d6ff" stroke-width="10"/>
+  <path d="M80 240h640M80 360h640M240 120v360M400 120v360M560 120v360" stroke="#26364a" stroke-width="6"/>
+  <circle cx="400" cy="300" r="54" fill="#f7c948"/>
+  <path d="M400 222v-62M400 440v-62M322 300h-62M540 300h-62" stroke="#70d6ff" stroke-width="18" stroke-linecap="round"/>
+  <text x="400" y="532" fill="#d8e2ee" font-family="Arial, sans-serif" font-size="38" font-weight="700" text-anchor="middle">2D TEST</text>
+</svg>
