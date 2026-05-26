@@ -250,7 +250,7 @@ class PacmanScene extends Scene {
   private updateGhosts(dt: number): void {
     for (const ghost of this.ghosts) {
       const speed = ghost.mode === "frightened" ? 4.2 : ghost.mode === "eyes" ? 10 : this.ghostSpeed(ghost);
-      this.moveActor(ghost, dt * speed, () => this.chooseGhostDirection(ghost));
+      this.moveActor(ghost, dt * speed, () => this.chooseGhostDirection(ghost), (tile, direction) => this.canGhostMove(ghost, tile, direction));
       if (ghost.mode === "eyes" && ghost.tile.x === ghost.start.x && ghost.tile.y === ghost.start.y) {
         ghost.mode = this.mode;
         ghost.eaten = false;
@@ -258,14 +258,19 @@ class PacmanScene extends Scene {
     }
   }
 
-  private moveActor(actor: Actor, distance: number, chooseDirection: () => Direction): void {
+  private moveActor(
+    actor: Actor,
+    distance: number,
+    chooseDirection: () => Direction,
+    canMove: (tile: Tile, direction: Direction) => boolean = (tile, direction) => this.canMove(tile, direction)
+  ): void {
     let remaining = distance;
     while (remaining > 0) {
       if (actor.progress === 0) {
         const desired = chooseDirection();
-        if (desired !== "none" && this.canMove(actor.tile, desired)) {
+        if (desired !== "none" && canMove(actor.tile, desired)) {
           actor.direction = desired;
-        } else if (!this.canMove(actor.tile, actor.direction)) {
+        } else if (!canMove(actor.tile, actor.direction)) {
           actor.direction = "none";
         }
       }
@@ -285,17 +290,19 @@ class PacmanScene extends Scene {
 
   private chooseGhostDirection(ghost: Ghost): Direction {
     if (ghost.mode === "frightened") {
-      const options = this.validDirections(ghost).filter((direction) => direction !== opposite[ghost.direction]);
-      return options[Math.floor(Math.random() * options.length)] ?? opposite[ghost.direction];
+      const options = this.validGhostDirections(ghost).filter((direction) => direction !== opposite[ghost.direction]);
+      return options[Math.floor(Math.random() * options.length)] ?? this.validGhostDirections(ghost)[0] ?? "none";
     }
     const target = this.ghostExitTarget(ghost) ?? (
       ghost.mode === "eyes" ? ghost.start : ghost.mode === "scatter" ? ghost.scatterTarget : this.chaseTarget(ghost)
     );
-    const options = this.validDirections(ghost).filter((direction) => direction !== opposite[ghost.direction]);
-    const viable = options.length > 0 ? options : this.validDirections(ghost);
+    const options = this.validGhostDirections(ghost).filter((direction) => direction !== opposite[ghost.direction]);
+    const viable = options.length > 0 ? options : this.validGhostDirections(ghost);
     return viable.reduce((best, direction) => {
       const tile = this.nextTile(ghost.tile, direction);
-      return this.distance(tile, target) < this.distance(this.nextTile(ghost.tile, best), target) ? direction : best;
+      const distance = this.pathDistance(this.wrap(tile), target, ghost);
+      const bestDistance = this.pathDistance(this.wrap(this.nextTile(ghost.tile, best)), target, ghost);
+      return distance < bestDistance ? direction : best;
     }, viable[0] ?? "none");
   }
 
@@ -319,7 +326,7 @@ class PacmanScene extends Scene {
     if (ghost.mode === "eyes") {
       return null;
     }
-    const inHouse = ghost.tile.x >= 11 && ghost.tile.x <= 16 && ghost.tile.y >= 12 && ghost.tile.y <= 15;
+    const inHouse = this.isGhostHouseTile(ghost.tile);
     return inHouse ? { x: 13, y: 11 } : null;
   }
 
@@ -406,10 +413,10 @@ class PacmanScene extends Scene {
 
   private createGhosts(): Ghost[] {
     return [
-      this.createGhost("blinky", "#ff3f5f", { x: 13, y: 11 }, { x: 26, y: -2 }, "left"),
-      this.createGhost("pinky", "#ff7bd5", { x: 13, y: 14 }, { x: 1, y: -2 }, "up"),
-      this.createGhost("inky", "#40e0ff", { x: 12, y: 14 }, { x: 26, y: 32 }, "up"),
-      this.createGhost("clyde", "#ffad42", { x: 15, y: 14 }, { x: 1, y: 32 }, "up")
+      this.createGhost("blinky", "#ff3f5f", { x: 13, y: 11 }, { x: 26, y: 1 }, "left"),
+      this.createGhost("pinky", "#ff7bd5", { x: 13, y: 14 }, { x: 1, y: 1 }, "up"),
+      this.createGhost("inky", "#40e0ff", { x: 12, y: 14 }, { x: 26, y: 28 }, "up"),
+      this.createGhost("clyde", "#ffad42", { x: 15, y: 14 }, { x: 1, y: 28 }, "up")
     ];
   }
 
@@ -464,6 +471,90 @@ class PacmanScene extends Scene {
 
   private validDirections(actor: Actor): Direction[] {
     return (["up", "down", "left", "right"] as Direction[]).filter((direction) => this.canMove(actor.tile, direction));
+  }
+
+  private validGhostDirections(ghost: Ghost): Direction[] {
+    return (["up", "down", "left", "right"] as Direction[]).filter((direction) => this.canGhostMove(ghost, ghost.tile, direction));
+  }
+
+  private canGhostMove(ghost: Ghost, tile: Tile, direction: Direction): boolean {
+    if (!this.canMove(tile, direction)) {
+      return false;
+    }
+    if (ghost.mode === "eyes") {
+      return true;
+    }
+    const next = this.wrap(this.nextTile(tile, direction));
+    if (this.isGhostHouseTile(tile)) {
+      return true;
+    }
+    return !this.isGhostHouseTile(next);
+  }
+
+  private isGhostHouseTile(tile: Tile): boolean {
+    const isDoor = tile.y === 12 && tile.x >= 13 && tile.x <= 14;
+    const isInside = tile.y >= 13 && tile.y <= 15 && tile.x >= 11 && tile.x <= 16;
+    return isDoor || isInside;
+  }
+
+  private pathDistance(start: Tile, target: Tile, ghost: Ghost): number {
+    const destination = this.nearestOpenTile(target, ghost);
+    if (start.x === destination.x && start.y === destination.y) {
+      return 0;
+    }
+
+    const queue: Array<{ tile: Tile; distance: number }> = [{ tile: start, distance: 0 }];
+    const visited = new Set<string>([this.key(start.x, start.y)]);
+    let cursor = 0;
+
+    while (cursor < queue.length) {
+      const current = queue[cursor];
+      cursor += 1;
+      for (const direction of ["up", "down", "left", "right"] as Direction[]) {
+        if (!this.canGhostMove(ghost, current.tile, direction)) {
+          continue;
+        }
+        const next = this.wrap(this.nextTile(current.tile, direction));
+        const key = this.key(next.x, next.y);
+        if (visited.has(key)) {
+          continue;
+        }
+        if (next.x === destination.x && next.y === destination.y) {
+          return current.distance + 1;
+        }
+        visited.add(key);
+        queue.push({ tile: next, distance: current.distance + 1 });
+      }
+    }
+
+    return this.distance(start, destination) + 1000;
+  }
+
+  private nearestOpenTile(target: Tile, ghost: Ghost): Tile {
+    const clamped = {
+      x: Math.max(0, Math.min(columns - 1, Math.round(target.x))),
+      y: Math.max(0, Math.min(rows - 1, Math.round(target.y)))
+    };
+    if (!this.walls.has(this.key(clamped.x, clamped.y)) && (ghost.mode === "eyes" || !this.isGhostHouseTile(clamped))) {
+      return clamped;
+    }
+
+    let best = clamped;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < columns; x += 1) {
+        const tile = { x, y };
+        if (this.walls.has(this.key(x, y)) || (ghost.mode !== "eyes" && this.isGhostHouseTile(tile))) {
+          continue;
+        }
+        const distance = this.distance(tile, clamped);
+        if (distance < bestDistance) {
+          best = tile;
+          bestDistance = distance;
+        }
+      }
+    }
+    return best;
   }
 
   private nextTile(tile: Tile, direction: Direction): Tile {
