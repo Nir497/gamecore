@@ -1,4 +1,8 @@
 import "./styles.css";
+import alienBruteUrl from "../assets/sprites/alien-brute.svg?url";
+import alienHunterUrl from "../assets/sprites/alien-hunter.svg?url";
+import alienScoutUrl from "../assets/sprites/alien-scout.svg?url";
+import playerCannonUrl from "../assets/sprites/player-cannon.svg?url";
 import { createGame, Scene } from "../../../src/engine";
 
 type AlienKind = "squid" | "crab" | "octopus";
@@ -62,6 +66,7 @@ const alienGapX = 24;
 const alienGapY = 28;
 const alienStep = 12;
 const alienDrop = 30;
+const maxPlayerShots = 4;
 const plungerColumns = [1, 7, 1, 1, 1, 4, 11, 1, 6, 3, 1, 1, 11, 9, 2, 8];
 const squigglyColumns = [11, 1, 6, 3, 1, 1, 11, 9, 2, 8, 2, 11, 4, 7, 10];
 const ufoScores = [50, 100, 150];
@@ -71,7 +76,8 @@ class SpaceInvadersScene extends Scene {
   private shields: Shield[] = [];
   private enemyShots: Shot[] = [];
   private particles: Particle[] = [];
-  private playerShot: Shot | null = null;
+  private playerShots: Shot[] = [];
+  private shotCooldown = 0;
   private ufo: Ufo = { x: -90, y: 96, direction: 1, active: false };
   private playerX = width / 2;
   private score = 0;
@@ -100,6 +106,27 @@ class SpaceInvadersScene extends Scene {
     size: 1 + (index % 3) * 0.6,
     speed: 10 + (index % 5) * 4
   }));
+  private alienSprites: Record<AlienKind, HTMLImageElement | null> = {
+    squid: null,
+    crab: null,
+    octopus: null
+  };
+  private playerSprite: HTMLImageElement | null = null;
+
+  override async preload(): Promise<void> {
+    const [scout, hunter, brute, player] = await Promise.all([
+      this.game.assets.image("space-invaders:alien-scout", alienScoutUrl),
+      this.game.assets.image("space-invaders:alien-hunter", alienHunterUrl),
+      this.game.assets.image("space-invaders:alien-brute", alienBruteUrl),
+      this.game.assets.image("space-invaders:player-cannon", playerCannonUrl)
+    ]);
+    this.alienSprites = {
+      squid: scout,
+      crab: hunter,
+      octopus: brute
+    };
+    this.playerSprite = player;
+  }
 
   override start(): void {
     this.resetWave(true);
@@ -111,6 +138,7 @@ class SpaceInvadersScene extends Scene {
     this.updateParticles(dt);
     this.waveFlash = Math.max(0, this.waveFlash - dt);
     this.hitPause = Math.max(0, this.hitPause - dt);
+    this.shotCooldown = Math.max(0, this.shotCooldown - dt);
 
     if (!this.running && !this.playerExplosion) {
       return;
@@ -182,17 +210,18 @@ class SpaceInvadersScene extends Scene {
     const right = input.isKeyDown("ArrowRight") || input.isKeyDown("KeyD");
     const move = (right ? 1 : 0) - (left ? 1 : 0);
     this.playerX = clamp(this.playerX + move * 420 * dt, 54, width - 54);
-    if (input.isKeyDown("Space")) {
+    if (input.isKeyDown("Space") && this.shotCooldown === 0) {
       this.firePlayerShot();
     }
   }
 
   private firePlayerShot(): void {
-    if (this.playerShot || this.playerExplosion > 0 || this.gameOver) {
+    if (this.playerShots.length >= maxPlayerShots || this.playerExplosion > 0 || this.gameOver) {
       return;
     }
     this.shotCount += 1;
-    this.playerShot = {
+    this.shotCooldown = 0.18;
+    this.playerShots.push({
       x: this.playerX - 3,
       y: playerY - 22,
       width: 6,
@@ -200,49 +229,55 @@ class SpaceInvadersScene extends Scene {
       speed: -680,
       kind: "player",
       wiggle: 0
-    };
+    });
     this.spawnParticles(this.playerX, playerY - 18, "#7dd3fc", 5);
   }
 
   private updatePlayerShot(dt: number): void {
-    if (!this.playerShot) {
-      return;
-    }
-    this.playerShot.y += this.playerShot.speed * dt;
-    if (this.playerShot.y + this.playerShot.height < 54) {
-      this.playerShot = null;
-      return;
-    }
-
-    if (this.ufo.active && intersects(this.playerShot, { x: this.ufo.x - 38, y: this.ufo.y - 14, width: 76, height: 28 })) {
-      const value = this.ufoScore();
-      this.addScore(value);
-      this.spawnParticles(this.ufo.x, this.ufo.y, "#fb7185", 24);
-      this.ufo.active = false;
-      this.playerShot = null;
-      this.message = `${value}`;
-      this.waveFlash = 0.45;
-      return;
-    }
-
-    for (const alien of this.aliens) {
-      if (!alien.alive) {
+    const remainingShots: Shot[] = [];
+    for (const shot of this.playerShots) {
+      shot.y += shot.speed * dt;
+      if (shot.y + shot.height < 54) {
         continue;
       }
-      if (intersects(this.playerShot, this.alienRect(alien))) {
-        alien.alive = false;
-        alien.flash = 0.2;
-        this.addScore(alien.points);
-        this.spawnParticles(alien.x, alien.y, this.alienColor(alien.kind), 15);
-        this.playerShot = null;
-        this.hitPause = 0.16;
-        return;
+
+      let consumed = false;
+      if (this.ufo.active && intersects(shot, { x: this.ufo.x - 38, y: this.ufo.y - 14, width: 76, height: 28 })) {
+        const value = this.ufoScore();
+        this.addScore(value);
+        this.spawnParticles(this.ufo.x, this.ufo.y, "#fb7185", 24);
+        this.ufo.active = false;
+        this.message = `${value}`;
+        this.waveFlash = 0.45;
+        consumed = true;
+      }
+
+      if (!consumed) {
+        for (const alien of this.aliens) {
+          if (!alien.alive) {
+            continue;
+          }
+          if (intersects(shot, this.alienRect(alien))) {
+            alien.alive = false;
+            alien.flash = 0.2;
+            this.addScore(alien.points);
+            this.spawnParticles(alien.x, alien.y, this.alienColor(alien.kind), 15);
+            this.hitPause = 0.16;
+            consumed = true;
+            break;
+          }
+        }
+      }
+
+      if (!consumed && this.damageShieldWithShot(shot, 2)) {
+        consumed = true;
+      }
+
+      if (!consumed) {
+        remainingShots.push(shot);
       }
     }
-
-    if (this.damageShieldWithShot(this.playerShot, 2)) {
-      this.playerShot = null;
-    }
+    this.playerShots = remainingShots;
   }
 
   private updateEnemyShots(dt: number): void {
@@ -265,9 +300,10 @@ class SpaceInvadersScene extends Scene {
       if (this.damageShieldWithShot(shot, 2)) {
         return false;
       }
-      if (this.playerShot && intersects(shot, this.playerShot)) {
+      const playerShotIndex = this.playerShots.findIndex((playerShot) => intersects(shot, playerShot));
+      if (playerShotIndex !== -1) {
         this.spawnParticles(shot.x, shot.y, "#f8fafc", 8);
-        this.playerShot = null;
+        this.playerShots.splice(playerShotIndex, 1);
         return false;
       }
       if (this.playerExplosion === 0 && this.playerHitBy(shot)) {
@@ -408,7 +444,7 @@ class SpaceInvadersScene extends Scene {
     this.playerExplosion = 1.2;
     this.spawnParticles(this.playerX, playerY, "#f97316", 34);
     this.enemyShots = [];
-    this.playerShot = null;
+    this.playerShots = [];
     if (this.lives <= 0) {
       this.message = "GAME OVER";
     }
@@ -449,7 +485,8 @@ class SpaceInvadersScene extends Scene {
   private resetWave(resetPlayer: boolean): void {
     this.aliens = [];
     this.enemyShots = [];
-    this.playerShot = null;
+    this.playerShots = [];
+    this.shotCooldown = 0;
     this.alienDirection = 1;
     this.alienMoveTimer = 0;
     this.enemyFireTimer = 1.2;
@@ -735,52 +772,12 @@ class SpaceInvadersScene extends Scene {
 
   private drawAlien(ctx: CanvasRenderingContext2D, kind: AlienKind): void {
     const color = this.alienColor(kind);
-    ctx.fillStyle = color;
     ctx.shadowColor = color;
-    ctx.shadowBlur = 14;
-
-    if (kind === "squid") {
-      ctx.beginPath();
-      ctx.moveTo(0, -18);
-      ctx.lineTo(20, 2);
-      ctx.lineTo(10, 18);
-      ctx.lineTo(-10, 18);
-      ctx.lineTo(-20, 2);
-      ctx.closePath();
-      ctx.fill();
-      this.drawAlienEyes(ctx, -6, -2, 6, -2);
-      const tentacle = this.alienFrame === 0 ? 7 : 12;
-      this.drawLegs(ctx, [-14, -5, 5, 14], 18, tentacle);
-    } else if (kind === "crab") {
-      roundRect(ctx, -22, -14, 44, 26, 8);
-      ctx.fill();
-      this.drawAlienEyes(ctx, -8, -2, 8, -2);
-      const arm = this.alienFrame === 0 ? 18 : 24;
-      ctx.fillRect(-arm, -22, 8, 12);
-      ctx.fillRect(arm - 8, -22, 8, 12);
-      this.drawLegs(ctx, [-16, -6, 6, 16], 14, this.alienFrame === 0 ? 8 : 13);
-    } else {
-      roundRect(ctx, -24, -12, 48, 28, 10);
-      ctx.fill();
-      this.drawAlienEyes(ctx, -9, -1, 9, -1);
-      const offset = this.alienFrame === 0 ? 5 : 11;
-      this.drawLegs(ctx, [-18, -8, 8, 18], 16, offset);
-      ctx.fillRect(-30, -4, 7, 14);
-      ctx.fillRect(23, -4, 7, 14);
-    }
-  }
-
-  private drawAlienEyes(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number): void {
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "#020617";
-    ctx.fillRect(x1 - 3, y1 - 3, 6, 6);
-    ctx.fillRect(x2 - 3, y2 - 3, 6, 6);
-  }
-
-  private drawLegs(ctx: CanvasRenderingContext2D, positions: number[], y: number, length: number): void {
-    ctx.shadowBlur = 0;
-    for (const x of positions) {
-      ctx.fillRect(x - 3, y, 6, length);
+    ctx.shadowBlur = 16;
+    const sprite = this.alienSprites[kind];
+    if (sprite) {
+      const bob = this.alienFrame === 0 ? -1.5 : 1.5;
+      ctx.drawImage(sprite, -34, -28 + bob, 68, 54);
     }
   }
 
@@ -835,11 +832,11 @@ class SpaceInvadersScene extends Scene {
   }
 
   private drawShots(ctx: CanvasRenderingContext2D): void {
-    if (this.playerShot) {
+    for (const shot of this.playerShots) {
       ctx.fillStyle = "#e0f2fe";
       ctx.shadowColor = "#7dd3fc";
       ctx.shadowBlur = 14;
-      roundRect(ctx, this.playerShot.x, this.playerShot.y, this.playerShot.width, this.playerShot.height, 3);
+      roundRect(ctx, shot.x, shot.y, shot.width, shot.height, 3);
       ctx.fill();
     }
 
@@ -876,14 +873,11 @@ class SpaceInvadersScene extends Scene {
     }
     ctx.save();
     ctx.translate(this.playerX, playerY);
-    ctx.fillStyle = "#7dd3fc";
     ctx.shadowColor = "#38bdf8";
     ctx.shadowBlur = 18;
-    roundRect(ctx, -playerWidth / 2, -18, playerWidth, 22, 6);
-    ctx.fill();
-    ctx.fillRect(-10, -34, 20, 20);
-    ctx.fillStyle = "#e0f2fe";
-    ctx.fillRect(-4, -44, 8, 13);
+    if (this.playerSprite) {
+      ctx.drawImage(this.playerSprite, -52, -54, 104, 62);
+    }
     ctx.fillStyle = "rgba(125, 211, 252, 0.35)";
     ctx.fillRect(-playerWidth / 2 - 8, 2, playerWidth + 16, 4);
     ctx.restore();

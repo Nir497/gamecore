@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 96">
+  <defs>
+    <linearGradient id="shell" x1="20%" x2="80%" y1="0%" y2="100%">
+      <stop offset="0" stop-color="#e0f2fe"/>
+      <stop offset="0.45" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#075985"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <path d="M23 50c2-25 18-38 41-38s39 13 41 38l13-10c3 15-4 28-20 37-8 7-19 10-34 10s-26-3-34-10C14 68 7 55 10 40l13 10Z" fill="url(#shell)" filter="url(#glow)"/>
+  <path d="M38 33c6-7 14-11 26-11s20 4 26 11" fill="none" stroke="#bae6fd" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+  <ellipse cx="46" cy="52" rx="12" ry="10" fill="#06111f"/>
+  <ellipse cx="82" cy="52" rx="12" ry="10" fill="#06111f"/>
+  <circle cx="49" cy="49" r="3" fill="#ecfeff"/>
+  <circle cx="85" cy="49" r="3" fill="#ecfeff"/>
+  <path d="M20 37 5 20M108 37l15-17M30 73 18 91M50 80l-5 14M78 80l5 14M98 73l12 18" fill="none" stroke="#7dd3fc" stroke-width="8" stroke-linecap="round"/>
+  <path d="M55 66c7 4 13 4 19 0" fill="none" stroke="#082f49" stroke-width="5" stroke-linecap="round"/>
+</svg>

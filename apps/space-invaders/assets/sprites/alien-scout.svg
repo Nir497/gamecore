@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 96">
+  <defs>
+    <radialGradient id="body" cx="50%" cy="34%" r="70%">
+      <stop offset="0" stop-color="#fdf2f8"/>
+      <stop offset="0.42" stop-color="#f472b6"/>
+      <stop offset="1" stop-color="#831843"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <path d="M64 8C47 8 34 20 30 37c-9 5-16 14-18 25 7-2 13-1 19 3 3 15 15 23 33 23s30-8 33-23c6-4 12-5 19-3-2-11-9-20-18-25C94 20 81 8 64 8Z" fill="url(#body)" filter="url(#glow)"/>
+  <path d="M38 51c6-11 15-16 26-16s20 5 26 16c-6 9-15 13-26 13s-20-4-26-13Z" fill="#fbcfe8" opacity=".5"/>
+  <ellipse cx="49" cy="47" rx="10" ry="13" fill="#06111f"/>
+  <ellipse cx="79" cy="47" rx="10" ry="13" fill="#06111f"/>
+  <circle cx="52" cy="43" r="3" fill="#e0f2fe"/>
+  <circle cx="82" cy="43" r="3" fill="#e0f2fe"/>
+  <path d="M37 74c-5 8-9 13-15 16M52 78l-7 15M64 80v16M76 78l7 15M91 74c5 8 9 13 15 16" fill="none" stroke="#f9a8d4" stroke-width="8" stroke-linecap="round"/>
+  <path d="M58 66c4 4 8 4 12 0" fill="none" stroke="#500724" stroke-width="4" stroke-linecap="round"/>
+</svg>
