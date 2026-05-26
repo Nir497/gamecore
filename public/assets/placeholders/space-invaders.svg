@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Space Invaders placeholder">
+  <rect width="800" height="600" fill="#0b1017"/>
+  <g fill="#88e060">
+    <path d="M214 148h40v40h40v-40h40v40h40v40h-40v40h40v40h-40v-40h-40v40h-40v-40h-40v40h-40v-40h40v-40h-40v-40h40z"/>
+    <path d="M466 148h40v40h40v-40h40v40h40v40h-40v40h40v40h-40v-40h-40v40h-40v-40h-40v40h-40v-40h40v-40h-40v-40h40z"/>
+  </g>
+  <path d="M360 448h80v32h70v40H290v-40h70z" fill="#45b7d1"/>
+  <path d="M400 406v-70" stroke="#f7c948" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="160" cy="90" r="4" fill="#edf2f7"/>
+  <circle cx="660" cy="112" r="5" fill="#edf2f7"/>
+  <circle cx="540" cy="72" r="3" fill="#edf2f7"/>
+</svg>

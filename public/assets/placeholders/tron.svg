@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Tron placeholder">
+  <rect width="800" height="600" fill="#071018"/>
+  <path d="M0 420h800M0 340h800M0 260h800M0 180h800M160 0v600M320 0v600M480 0v600M640 0v600" stroke="#123447" stroke-width="4"/>
+  <path d="M100 430h240v-120h160" fill="none" stroke="#45b7d1" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M700 170H470v120H290" fill="none" stroke="#f7c948" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="340" cy="310" r="30" fill="#45b7d1"/>
+  <circle cx="470" cy="290" r="30" fill="#f7c948"/>
+</svg>

@@ -15,12 +15,14 @@ npm run test
 
 ```text
 src/engine/          shared engine package
+src/home/            game selection homepage
 apps/blank-2d/      starter page for Canvas 2D games
 apps/blank-3d/      starter page for Three.js games
+public/assets/       static images and future game thumbnails
 tests/              core engine tests
 ```
 
-Each game should live under `apps/<game-name>/` with its own `index.html` and `src/main.ts`. Add each new game page to `vite.config.ts` under `build.rollupOptions.input`.
+Each game should live under `apps/<game-name>/` with its own `index.html` and `src/main.ts`. Add each new game page to `vite.config.ts` under `build.rollupOptions.input`, then add its card data in `src/home/main.ts`.
 
 ## Engine Capabilities
 

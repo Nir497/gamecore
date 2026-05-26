@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Pong placeholder">
+  <rect width="800" height="600" fill="#121821"/>
+  <path d="M400 0v600" stroke="#3b4758" stroke-width="10" stroke-dasharray="24 24"/>
+  <rect x="82" y="210" width="28" height="180" rx="8" fill="#f7c948"/>
+  <rect x="690" y="145" width="28" height="180" rx="8" fill="#45b7d1"/>
+  <circle cx="455" cy="292" r="24" fill="#f5f7fb"/>
+  <text x="400" y="540" fill="#6f7d91" font-family="Arial, sans-serif" font-size="44" text-anchor="middle">PONG</text>
+</svg>

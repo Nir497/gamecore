@@ -1,0 +1,198 @@
+:root {
+  color: #edf2f7;
+  background: #0c1016;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(23, 30, 40, 0.95), rgba(12, 16, 22, 1)),
+    #0c1016;
+}
+
+.shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0 48px;
+}
+
+.topbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+p {
+  margin: 10px 0 0;
+  color: #aab6c6;
+  font-size: 17px;
+}
+
+.search {
+  display: grid;
+  gap: 8px;
+  min-width: min(360px, 100%);
+  color: #c7d2df;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.search input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #354152;
+  border-radius: 8px;
+  background: #111821;
+  color: #f8fafc;
+  padding: 0 14px;
+  font-size: 16px;
+  outline: none;
+}
+
+.search input:focus {
+  border-color: #45b7d1;
+  box-shadow: 0 0 0 3px rgba(69, 183, 209, 0.22);
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.game-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid #263242;
+  border-radius: 8px;
+  background: #151c26;
+  color: #ffffff;
+  text-decoration: none;
+  isolation: isolate;
+}
+
+.game-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.01);
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.game-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(5, 8, 12, 0.05), rgba(5, 8, 12, 0.82));
+  opacity: 0;
+  transition: opacity 180ms ease;
+  z-index: 1;
+}
+
+.game-card:hover img,
+.game-card:focus-visible img {
+  transform: scale(1.06);
+  filter: saturate(1.1);
+}
+
+.game-card:hover::after,
+.game-card:focus-visible::after {
+  opacity: 1;
+}
+
+.game-card:focus-visible {
+  outline: 3px solid #45b7d1;
+  outline-offset: 3px;
+}
+
+.game-title {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.game-card:hover .game-title,
+.game-card:focus-visible .game-title {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(8, 12, 18, 0.72);
+  color: #d8e2ee;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-ready {
+  color: #9ff0c0;
+}
+
+.empty {
+  margin-top: 32px;
+  text-align: center;
+  color: #d8e2ee;
+}
+
+@media (max-width: 680px) {
+  .shell {
+    width: min(100% - 24px, 1180px);
+    padding-top: 20px;
+  }
+
+  .topbar {
+    display: grid;
+    align-items: stretch;
+  }
+
+  h1 {
+    font-size: 36px;
+  }
+
+  .game-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .game-title {
+    font-size: 18px;
+  }
+}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="3D template placeholder">
+  <rect width="800" height="600" fill="#10151f"/>
+  <path d="M400 90l210 120v240L400 570 190 450V210z" fill="#1f2a38"/>
+  <path d="M400 90v240l210-120M400 330L190 210M400 330v240" fill="none" stroke="#45b7d1" stroke-width="18" stroke-linejoin="round"/>
+  <path d="M400 90l210 120-210 120-210-120z" fill="#2f80ed" opacity=".35"/>
+  <path d="M400 330l210-120v240L400 570z" fill="#f7c948" opacity=".28"/>
+  <path d="M400 330L190 210v240l210 120z" fill="#ff5c8a" opacity=".24"/>
+</svg>

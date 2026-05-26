@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="First person template placeholder">
+  <rect width="800" height="600" fill="#10151f"/>
+  <path d="M0 600l300-260h200l300 260z" fill="#222d3a"/>
+  <path d="M330 340h140l45 260H285z" fill="#151d27"/>
+  <path d="M400 110v120M340 170h120" stroke="#f5f7fb" stroke-width="10" stroke-linecap="round"/>
+  <path d="M0 600l330-260M800 600L470 340" stroke="#45b7d1" stroke-width="8"/>
+  <path d="M566 404l84 142M234 404l-84 142" stroke="#f7c948" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="400" cy="170" r="92" fill="none" stroke="#3b4758" stroke-width="8"/>
+</svg>

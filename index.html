@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gamecore Arcade</title>
+    <script type="module" src="./src/home/main.ts"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Gamecore</h1>
+          <p>Choose a game to play.</p>
+        </div>
+        <label class="search">
+          <span>Search</span>
+          <input id="game-search" type="search" autocomplete="off" placeholder="Find a game" />
+        </label>
+      </header>
+
+      <section class="game-grid" id="game-grid" aria-label="Games"></section>
+      <p class="empty" id="empty-message" hidden>No games match your search.</p>
+    </main>
+  </body>
+</html>

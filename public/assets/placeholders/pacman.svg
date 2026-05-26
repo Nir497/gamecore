@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Pac-Man placeholder">
+  <rect width="800" height="600" fill="#10151f"/>
+  <path d="M120 120h560v360H120z" fill="none" stroke="#2f80ed" stroke-width="22"/>
+  <path d="M224 302a88 88 0 1 0 0-4L310 248v104z" fill="#f7c948"/>
+  <circle cx="390" cy="300" r="12" fill="#f5f7fb"/>
+  <circle cx="470" cy="300" r="12" fill="#f5f7fb"/>
+  <circle cx="550" cy="300" r="12" fill="#f5f7fb"/>
+  <path d="M610 270c44 0 70 27 70 74v52h-140v-52c0-47 26-74 70-74z" fill="#ff5c8a"/>
+  <circle cx="586" cy="310" r="10" fill="#10151f"/>
+  <circle cx="634" cy="310" r="10" fill="#10151f"/>
+</svg>
