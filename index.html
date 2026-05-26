@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gamecore Arcade</title>
+    <link rel="stylesheet" href="./src/home/styles.css" />
     <script type="module" src="./src/home/main.ts"></script>
   </head>
   <body>
@@ -20,7 +21,72 @@
         </label>
       </header>
 
-      <section class="game-grid" id="game-grid" aria-label="Games"></section>
+      <section class="game-grid" id="game-grid" aria-label="Games">
+        <a class="game-card" href="./apps/blank-2d/" aria-label="Play 2D Test Game" data-game-name="2D Test Game">
+          <img src="./assets/placeholders/test-2d.svg" alt="" loading="lazy" />
+          <span class="game-info">
+            <span class="game-title">2D Test Game</span>
+            <span class="game-description">Canvas test scene with keyboard movement.</span>
+          </span>
+          <span class="status status-ready">Ready</span>
+        </a>
+        <a class="game-card" href="./apps/blank-3d/" aria-label="Play 3D Test Game" data-game-name="3D Test Game">
+          <img src="./assets/placeholders/test-3d.svg" alt="" loading="lazy" />
+          <span class="game-info">
+            <span class="game-title">3D Test Game</span>
+            <span class="game-description">Three.js test scene with a rotating cube.</span>
+          </span>
+          <span class="status status-ready">Ready</span>
+        </a>
+        <a class="game-card" href="./apps/blank-2d/" aria-label="Play Pong" data-game-name="Pong">
+          <img src="./assets/placeholders/pong.svg" alt="" loading="lazy" />
+          <span class="game-info">
+            <span class="game-title">Pong</span>
+            <span class="game-description">Classic paddle game slot.</span>
+          </span>
+          <span class="status status-placeholder">Placeholder</span>
+        </a>
+        <a class="game-card" href="./apps/blank-2d/" aria-label="Play Pac-Man" data-game-name="Pac-Man">
+          <img src="./assets/placeholders/pacman.svg" alt="" loading="lazy" />
+          <span class="game-info">
+            <span class="game-title">Pac-Man</span>
+            <span class="game-description">Maze chase game slot.</span>
+          </span>
+          <span class="status status-placeholder">Placeholder</span>
+        </a>
+        <a class="game-card" href="./apps/blank-2d/" aria-label="Play Space Invaders" data-game-name="Space Invaders">
+          <img src="./assets/placeholders/space-invaders.svg" alt="" loading="lazy" />
+          <span class="game-info">
+            <span class="game-title">Space Invaders</span>
+            <span class="game-description">Fixed shooter game slot.</span>
+          </span>
+          <span class="status status-placeholder">Placeholder</span>
+        </a>
+        <a class="game-card" href="./apps/blank-2d/" aria-label="Play Tron" data-game-name="Tron">
+          <img src="./assets/placeholders/tron.svg" alt="" loading="lazy" />
+          <span class="game-info">
+            <span class="game-title">Tron</span>
+            <span class="game-description">Light-cycle arena game slot.</span>
+          </span>
+          <span class="status status-placeholder">Placeholder</span>
+        </a>
+        <a class="game-card" href="./apps/blank-3d/" aria-label="Play 3D Template" data-game-name="3D Template">
+          <img src="./assets/placeholders/three-d.svg" alt="" loading="lazy" />
+          <span class="game-info">
+            <span class="game-title">3D Template</span>
+            <span class="game-description">General 3D starter scene.</span>
+          </span>
+          <span class="status status-ready">Ready</span>
+        </a>
+        <a class="game-card" href="./apps/blank-3d/" aria-label="Play First Person Template" data-game-name="First Person Template">
+          <img src="./assets/placeholders/first-person.svg" alt="" loading="lazy" />
+          <span class="game-info">
+            <span class="game-title">First Person Template</span>
+            <span class="game-description">First-person prototype slot.</span>
+          </span>
+          <span class="status status-placeholder">Placeholder</span>
+        </a>
+      </section>
       <p class="empty" id="empty-message" hidden>No games match your search.</p>
     </main>
   </body>
