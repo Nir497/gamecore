@@ -54,7 +54,7 @@ interface Particle {
   color: string;
 }
 
-const width = 900;
+const baseWidth = 900;
 const height = 1080;
 const groundY = 964;
 const playerY = 938;
@@ -79,7 +79,9 @@ class SpaceInvadersScene extends Scene {
   private playerShots: Shot[] = [];
   private shotCooldown = 0;
   private ufo: Ufo = { x: -90, y: 96, direction: 1, active: false };
-  private playerX = width / 2;
+  private playerX = baseWidth / 2;
+  private worldWidth = baseWidth;
+  private viewportScale = 1;
   private score = 0;
   private highScore = Number(localStorage.getItem("gamecore-space-invaders-high-score") ?? 0);
   private lives = 3;
@@ -101,7 +103,7 @@ class SpaceInvadersScene extends Scene {
   private waveFlash = 0;
   private playerExplosion = 0;
   private stars = Array.from({ length: 130 }, (_, index) => ({
-    x: (index * 197) % width,
+    x: (index * 197) % baseWidth,
     y: (index * 89) % height,
     size: 1 + (index % 3) * 0.6,
     speed: 10 + (index % 5) * 4
@@ -129,10 +131,12 @@ class SpaceInvadersScene extends Scene {
   }
 
   override start(): void {
+    this.syncViewport();
     this.resetWave(true);
   }
 
   override update(dt: number): void {
+    this.syncViewport();
     this.readInput(dt);
     this.updateStars(dt);
     this.updateParticles(dt);
@@ -179,8 +183,8 @@ class SpaceInvadersScene extends Scene {
   override render2D(ctx: CanvasRenderingContext2D): void {
     const viewportWidth = this.game.canvas.width;
     const viewportHeight = this.game.canvas.height;
-    const scale = Math.min(viewportWidth / width, viewportHeight / height);
-    const offsetX = (viewportWidth - width * scale) / 2;
+    const scale = this.viewportScale;
+    const offsetX = (viewportWidth - this.worldWidth * scale) / 2;
     const offsetY = (viewportHeight - height * scale) / 2;
 
     ctx.save();
@@ -219,7 +223,7 @@ class SpaceInvadersScene extends Scene {
     const left = input.isKeyDown("ArrowLeft") || input.isKeyDown("KeyA");
     const right = input.isKeyDown("ArrowRight") || input.isKeyDown("KeyD");
     const move = (right ? 1 : 0) - (left ? 1 : 0);
-    this.playerX = clamp(this.playerX + move * 420 * dt, 54, width - 54);
+    this.playerX = clamp(this.playerX + move * 420 * dt, 54, this.worldWidth - 54);
     if (input.isKeyDown("Space") && this.shotCooldown === 0) {
       this.firePlayerShot();
     }
@@ -344,7 +348,7 @@ class SpaceInvadersScene extends Scene {
       const bounds = this.alienBounds();
       const nextLeft = bounds.left + this.alienDirection * alienStep;
       const nextRight = bounds.right + this.alienDirection * alienStep;
-      if (nextRight >= width - 46 || nextLeft <= 46) {
+      if (nextRight >= this.worldWidth - 46 || nextLeft <= 46) {
         this.alienDirection *= -1;
         for (const alien of alive) {
           alien.y += alienDrop;
@@ -418,7 +422,7 @@ class SpaceInvadersScene extends Scene {
   private updateUfo(dt: number): void {
     if (this.ufo.active) {
       this.ufo.x += this.ufo.direction * 178 * dt;
-      if (this.ufo.x < -90 || this.ufo.x > width + 90) {
+      if (this.ufo.x < -90 || this.ufo.x > this.worldWidth + 90) {
         this.ufo.active = false;
         this.ufoTimer = this.nextUfoDelay();
       }
@@ -428,7 +432,7 @@ class SpaceInvadersScene extends Scene {
     this.ufoTimer -= dt;
     if (this.ufoTimer <= 0) {
       this.ufo.direction = this.level % 2 === 0 ? -1 : 1;
-      this.ufo.x = this.ufo.direction > 0 ? -72 : width + 72;
+      this.ufo.x = this.ufo.direction > 0 ? -72 : this.worldWidth + 72;
       this.ufo.y = 104;
       this.ufo.active = true;
     }
@@ -465,7 +469,7 @@ class SpaceInvadersScene extends Scene {
       this.endGame();
       return;
     }
-    this.playerX = width / 2;
+    this.playerX = this.worldWidth / 2;
     this.message = "SPACE TO START";
     this.running = false;
   }
@@ -486,7 +490,7 @@ class SpaceInvadersScene extends Scene {
     this.extraLifeAwarded = false;
     this.gameOver = false;
     this.playerExplosion = 0;
-    this.playerX = width / 2;
+    this.playerX = this.worldWidth / 2;
     this.resetWave(true);
     this.message = "";
     this.running = true;
@@ -504,7 +508,7 @@ class SpaceInvadersScene extends Scene {
     this.ufo.active = false;
     this.ufoTimer = this.nextUfoDelay();
     if (resetPlayer) {
-      this.playerX = width / 2;
+      this.playerX = this.worldWidth / 2;
     }
     const startX = this.gridStartX();
     const startY = 162 + ((this.level - 1) % 9) * 18;
@@ -551,8 +555,9 @@ class SpaceInvadersScene extends Scene {
           return (roof || sides || shoulders) && !arch;
         })
       );
+      const spacing = this.worldWidth / 5;
       return {
-        x: 132 + index * 186,
+        x: spacing * (index + 1) - (columns * cell) / 2,
         y: 774,
         columns,
         rows,
@@ -675,7 +680,13 @@ class SpaceInvadersScene extends Scene {
   }
 
   private gridStartX(): number {
-    return (width - (11 * alienWidth + 10 * alienGapX)) / 2 + alienWidth / 2;
+    return (this.worldWidth - (11 * alienWidth + 10 * alienGapX)) / 2 + alienWidth / 2;
+  }
+
+  private syncViewport(): void {
+    this.viewportScale = Math.min(this.game.canvas.width / baseWidth, this.game.canvas.height / height);
+    this.worldWidth = this.game.canvas.width / this.viewportScale;
+    this.playerX = clamp(this.playerX, 54, this.worldWidth - 54);
   }
 
   private kindForRow(row: number): AlienKind {
@@ -728,7 +739,7 @@ class SpaceInvadersScene extends Scene {
     gradient.addColorStop(0.5, "#07111f");
     gradient.addColorStop(1, "#02030a");
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, this.worldWidth, height);
 
     ctx.save();
     ctx.globalAlpha = 0.7;
@@ -740,7 +751,7 @@ class SpaceInvadersScene extends Scene {
 
     ctx.strokeStyle = "rgba(45, 212, 191, 0.07)";
     ctx.lineWidth = 1;
-    for (let x = 42; x < width; x += 42) {
+    for (let x = 42; x < this.worldWidth; x += 42) {
       ctx.beginPath();
       ctx.moveTo(x, 84);
       ctx.lineTo(x, groundY + 24);
@@ -750,20 +761,20 @@ class SpaceInvadersScene extends Scene {
 
   private drawHud(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = "rgba(2, 6, 23, 0.78)";
-    ctx.fillRect(0, 0, width, 74);
+    ctx.fillRect(0, 0, this.worldWidth, 74);
     ctx.strokeStyle = "rgba(94, 234, 212, 0.42)";
     ctx.beginPath();
     ctx.moveTo(24, 74);
-    ctx.lineTo(width - 24, 74);
+    ctx.lineTo(this.worldWidth - 24, 74);
     ctx.stroke();
 
     ctx.font = "700 24px ui-sans-serif, system-ui";
     ctx.fillStyle = "#e0f2fe";
     ctx.fillText(`SCORE ${this.score.toString().padStart(5, "0")}`, 32, 44);
     ctx.textAlign = "center";
-    ctx.fillText(`HIGH ${this.highScore.toString().padStart(5, "0")}`, width / 2, 44);
+    ctx.fillText(`HIGH ${this.highScore.toString().padStart(5, "0")}`, this.worldWidth / 2, 44);
     ctx.textAlign = "right";
-    ctx.fillText(`WAVE ${this.level}`, width - 32, 44);
+    ctx.fillText(`WAVE ${this.level}`, this.worldWidth - 32, 44);
     ctx.textAlign = "left";
   }
 
@@ -900,7 +911,7 @@ class SpaceInvadersScene extends Scene {
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(28, groundY);
-    ctx.lineTo(width - 28, groundY);
+    ctx.lineTo(this.worldWidth - 28, groundY);
     ctx.stroke();
 
     ctx.shadowBlur = 0;
@@ -915,7 +926,7 @@ class SpaceInvadersScene extends Scene {
     }
     ctx.fillStyle = "#94a3b8";
     ctx.textAlign = "right";
-    ctx.fillText(`SHOTS ${this.shotCount.toString().padStart(3, "0")}`, width - 32, 1016);
+    ctx.fillText(`SHOTS ${this.shotCount.toString().padStart(3, "0")}`, this.worldWidth - 32, 1016);
     ctx.textAlign = "left";
   }
 
@@ -936,23 +947,23 @@ class SpaceInvadersScene extends Scene {
     const pulse = 0.72 + Math.sin(performance.now() / 180) * 0.18;
     ctx.globalAlpha = this.running ? this.waveFlash : pulse;
     ctx.fillStyle = "rgba(2, 6, 23, 0.48)";
-    ctx.fillRect(0, 452, width, 116);
+    ctx.fillRect(0, 452, this.worldWidth, 116);
     ctx.textAlign = "center";
     ctx.fillStyle = this.gameOver ? "#fb7185" : "#e0f2fe";
     ctx.shadowColor = this.gameOver ? "#fb7185" : "#22d3ee";
     ctx.shadowBlur = 18;
     ctx.font = "800 42px ui-sans-serif, system-ui";
-    ctx.fillText(this.message || "WAVE CLEAR", width / 2, 520);
+    ctx.fillText(this.message || "WAVE CLEAR", this.worldWidth / 2, 520);
     if (!this.running && !this.gameOver) {
       ctx.shadowBlur = 0;
       ctx.fillStyle = "#94a3b8";
       ctx.font = "700 18px ui-sans-serif, system-ui";
-      ctx.fillText("SPACE TO START", width / 2, 552);
+      ctx.fillText("SPACE TO START", this.worldWidth / 2, 552);
     } else if (this.gameOver) {
       ctx.shadowBlur = 0;
       ctx.fillStyle = "#fecdd3";
       ctx.font = "700 18px ui-sans-serif, system-ui";
-      ctx.fillText("SPACE TO RESTART", width / 2, 552);
+      ctx.fillText("SPACE TO RESTART", this.worldWidth / 2, 552);
     }
     ctx.restore();
   }
