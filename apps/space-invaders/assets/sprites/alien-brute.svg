@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" shape-rendering="crispEdges">
   <rect width="64" height="48" fill="none"/>
-  <g fill="#f8fafc">
+  <g fill="#7ae582">
     <rect x="12" y="8" width="40" height="4"/>
     <rect x="8" y="12" width="48" height="4"/>
     <rect x="8" y="16" width="48" height="4"/>
@@ -18,7 +18,7 @@
     <rect x="0" y="24" width="4" height="4"/>
     <rect x="60" y="24" width="4" height="4"/>
   </g>
-  <g fill="#0f172a">
+  <g fill="#14532d">
     <rect x="20" y="16" width="4" height="4"/>
     <rect x="40" y="16" width="4" height="4"/>
     <rect x="20" y="20" width="4" height="4"/>
