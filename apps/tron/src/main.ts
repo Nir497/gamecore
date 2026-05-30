@@ -1,6 +1,6 @@
 import "./styles.css";
 import * as THREE from "three";
-import { InputManager, ThreeScene } from "../../../src/engine";
+import { ThreeScene } from "../../../src/engine";
 
 type CellValue = 0 | 1 | 2;
 type RoundState = "idle" | "running" | "resolving";
@@ -76,7 +76,6 @@ const statusElement = statusNode;
 const scoreOneElement = scoreOneNode;
 const scoreTwoElement = scoreTwoNode;
 
-const input = new InputManager(canvas);
 const world = new ThreeScene({ canvas, background: "#03050a", fov: 58, near: 0.1, far: 120 });
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 world.renderer.shadowMap.enabled = true;
@@ -93,8 +92,6 @@ let scoreOne = 0;
 let scoreTwo = 0;
 let pulseTime = 0;
 let selectedMode: GameMode = "bot";
-let lastPlayerOneHeldTurn: "left" | "right" | null = null;
-let lastPlayerTwoHeldTurn: "left" | "right" | null = null;
 
 const trailGeometry = new THREE.BoxGeometry(cellSize * 0.84, trailHeight, cellSize * 0.84);
 const trailOneMaterial = new THREE.MeshStandardMaterial({
@@ -277,8 +274,6 @@ function resetRound(message: string): void {
   accumulator = 0;
   moveProgress = 1;
   resolveTimer = 0;
-  lastPlayerOneHeldTurn = null;
-  lastPlayerTwoHeldTurn = null;
   statusElement.textContent = message;
   updateScores();
   renderCycles(1);
@@ -308,7 +303,6 @@ function loop(now: number): void {
   pulseTime += dt;
 
   if (roundState === "running") {
-    readHeldTurnControls();
     accumulator += dt * 1000;
     moveProgress = Math.min(accumulator / tickMs, 1);
     while (accumulator >= tickMs) {
@@ -326,7 +320,6 @@ function loop(now: number): void {
 
   renderCycles(roundState === "running" ? moveProgress : 1);
   world.render();
-  input.endFrame();
   requestAnimationFrame(loop);
 }
 
@@ -415,66 +408,49 @@ function onKeyDown(event: KeyboardEvent): void {
   if (roundState !== "running") {
     return;
   }
-  if (event.repeat) {
-    return;
-  }
 
-  const playerOneDirection = keyToPlayerDirection(event.code, playerOne, false);
+  const playerOneDirection = keyToPlayerOneDirection(event);
   if (playerOneDirection) {
     playerOne.pendingDir = playerOneDirection;
     return;
   }
 
-  const playerTwoDirection = keyToPlayerDirection(event.code, playerTwo, true);
+  const playerTwoDirection = keyToPlayerTwoDirection(event);
   if (playerTwoDirection && selectedMode === "multiplayer") {
     playerTwo.pendingDir = playerTwoDirection;
   }
 }
 
-function keyToPlayerDirection(code: string, cycle: Cycle, arrows: boolean): Direction | null {
-  if (arrows) {
-    if (code === "ArrowLeft") {
-      return turn(cycle, "left");
-    }
-    if (code === "ArrowRight") {
-      return turn(cycle, "right");
-    }
-    if (code === "ArrowUp") {
-      return cycle.dir;
-    }
-    return null;
+function keyToPlayerOneDirection(event: KeyboardEvent): Direction | null {
+  const key = event.key.toLowerCase();
+  if (event.code === "KeyA" || key === "a" || (selectedMode === "bot" && event.code === "ArrowLeft")) {
+    return turn(playerOne, "left");
   }
+  if (event.code === "KeyD" || key === "d" || (selectedMode === "bot" && event.code === "ArrowRight")) {
+    return turn(playerOne, "right");
+  }
+  if (event.code === "KeyW" || key === "w" || (selectedMode === "bot" && event.code === "ArrowUp")) {
+    return playerOne.dir;
+  }
+  return null;
+}
 
-  if (code === "KeyA") {
-    return turn(cycle, "left");
+function keyToPlayerTwoDirection(event: KeyboardEvent): Direction | null {
+  if (event.code === "ArrowLeft") {
+    return turn(playerTwo, "left");
   }
-  if (code === "KeyD") {
-    return turn(cycle, "right");
+  if (event.code === "ArrowRight") {
+    return turn(playerTwo, "right");
   }
-  if (code === "KeyW") {
-    return cycle.dir;
+  if (event.code === "ArrowUp") {
+    return playerTwo.dir;
   }
   return null;
 }
 
 function turn(cycle: Cycle, side: "left" | "right"): Direction {
-  const baseDirection = cycle.pendingDir;
-  const nextName = side === "left" ? leftTurns[baseDirection.name] : rightTurns[baseDirection.name];
+  const nextName = side === "left" ? leftTurns[cycle.dir.name] : rightTurns[cycle.dir.name];
   return directions[nextName];
-}
-
-function readHeldTurnControls(): void {
-  const playerOneHeldTurn = input.isKeyDown("KeyA") ? "left" : input.isKeyDown("KeyD") ? "right" : null;
-  if (playerOneHeldTurn && playerOneHeldTurn !== lastPlayerOneHeldTurn) {
-    playerOne.pendingDir = turn(playerOne, playerOneHeldTurn);
-  }
-  lastPlayerOneHeldTurn = playerOneHeldTurn;
-
-  const playerTwoHeldTurn = input.isKeyDown("ArrowLeft") ? "left" : input.isKeyDown("ArrowRight") ? "right" : null;
-  if (selectedMode === "multiplayer" && playerTwoHeldTurn && playerTwoHeldTurn !== lastPlayerTwoHeldTurn) {
-    playerTwo.pendingDir = turn(playerTwo, playerTwoHeldTurn);
-  }
-  lastPlayerTwoHeldTurn = playerTwoHeldTurn;
 }
 
 function applyPendingDirection(cycle: Cycle): void {
