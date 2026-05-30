@@ -167,11 +167,15 @@ function setupScene(): void {
   world.scene.add(gridHelper);
 
   const borderMaterial = new THREE.MeshStandardMaterial({
-    color: "#092231",
-    emissive: "#00d9ff",
-    emissiveIntensity: 1.2,
-    roughness: 0.42,
-    metalness: 0.32
+    color: "#3a0208",
+    emissive: "#ff1838",
+    emissiveIntensity: 2.25,
+    roughness: 0.32,
+    metalness: 0.26
+  });
+  const borderGuideMaterial = new THREE.MeshBasicMaterial({
+    color: "#ff2444",
+    toneMapped: false
   });
   const horizontalBorder = new THREE.BoxGeometry(arenaWidth + cellSize, 0.42, 0.12);
   const verticalBorder = new THREE.BoxGeometry(0.12, 0.42, arenaDepth + cellSize);
@@ -188,6 +192,25 @@ function setupScene(): void {
     wall.castShadow = true;
     wall.receiveShadow = true;
     world.scene.add(wall);
+  }
+
+  const guideThickness = 0.035;
+  const guideHeight = 0.035;
+  const guideInset = cellSize * 0.5;
+  const horizontalGuide = new THREE.BoxGeometry(arenaWidth, guideHeight, guideThickness);
+  const verticalGuide = new THREE.BoxGeometry(guideThickness, guideHeight, arenaDepth);
+  const guidePositions: Array<[THREE.BoxGeometry, number, number]> = [
+    [horizontalGuide, 0, -arenaDepth / 2 + guideInset],
+    [horizontalGuide, 0, arenaDepth / 2 - guideInset],
+    [verticalGuide, -arenaWidth / 2 + guideInset, 0],
+    [verticalGuide, arenaWidth / 2 - guideInset, 0]
+  ];
+
+  for (const [geometry, x, z] of guidePositions) {
+    const guide = new THREE.Mesh(geometry, borderGuideMaterial);
+    guide.position.set(x, 0.24, z);
+    guide.frustumCulled = false;
+    world.scene.add(guide);
   }
 
   const keyLight = new THREE.DirectionalLight("#d8fbff", 2.4);
