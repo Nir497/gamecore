@@ -40,8 +40,8 @@ interface TrailRun {
   mesh: THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
 }
 
-const columns = 60;
-const rows = 48;
+const columns = 72;
+const rows = 72;
 const tickMs = 80;
 const cellSize = 0.28;
 const arenaWidth = columns * cellSize;
@@ -273,8 +273,8 @@ function resetRound(message: string): void {
   grid.fill(0);
   clearTrailRuns();
 
-  resetCycle(playerOne, 15, 24, directions.right);
-  resetCycle(playerTwo, 45, 24, directions.left);
+  resetCycle(playerOne, 18, 36, directions.right);
+  resetCycle(playerTwo, 54, 36, directions.left);
   markCell(playerOne);
   markCell(playerTwo);
 

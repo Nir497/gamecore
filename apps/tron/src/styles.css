@@ -120,7 +120,7 @@ canvas {
   left: clamp(18px, 3vw, 42px);
   bottom: 54px;
   width: clamp(150px, 17vw, 230px);
-  aspect-ratio: 5 / 4;
+  aspect-ratio: 1;
   padding: 9px;
   border: 1px solid rgba(118, 231, 255, 0.34);
   border-radius: 8px;
