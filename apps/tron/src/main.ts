@@ -36,7 +36,7 @@ const tickMs = 80;
 const cellSize = 0.28;
 const arenaWidth = columns * cellSize;
 const arenaDepth = rows * cellSize;
-const trailHeight = 0.86;
+const trailHeight = 0.74;
 const cycleHeight = 0.34;
 const crashDuration = 0.82;
 const hardBotErrorRate = 0.05;
@@ -80,7 +80,7 @@ const world = new ThreeScene({ canvas, background: "#03050a", fov: 64, near: 0.1
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 world.renderer.shadowMap.enabled = true;
 world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-world.camera.position.set(-arenaWidth * 0.44, 1.18, 0);
+world.camera.position.set(-arenaWidth * 0.34, 1.18, 0);
 world.camera.lookAt(0, 0.42, 0);
 
 const grid: CellValue[] = new Array(columns * rows).fill(0);
@@ -522,8 +522,8 @@ function updateRiderCamera(progress: number): void {
   const [worldX, , worldZ] = cellToWorld(x, y, 0);
   const forward = new THREE.Vector3(playerOne.dir.x, 0, playerOne.dir.y).normalize();
 
-  cameraPosition.set(worldX, 1.18, worldZ).addScaledVector(forward, -4.9);
-  cameraTarget.set(worldX, 0.42, worldZ).addScaledVector(forward, 10.8);
+  cameraPosition.set(worldX, 1.18, worldZ).addScaledVector(forward, -3.35);
+  cameraTarget.set(worldX, 0.42, worldZ).addScaledVector(forward, 9.4);
 
   world.camera.position.lerp(cameraPosition, 0.36);
   world.camera.lookAt(cameraTarget);
