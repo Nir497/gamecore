@@ -674,13 +674,14 @@ function renderWorld(): void {
   const { renderer, scene } = world;
   const width = canvas.width;
   const height = canvas.height;
+  const fullScreenAspect = width / height;
 
   renderer.setScissorTest(false);
   renderer.setViewport(0, 0, width, height);
   renderer.clear();
 
   if (selectedMode !== "multiplayer") {
-    world.camera.aspect = width / height;
+    world.camera.aspect = fullScreenAspect;
     world.camera.updateProjectionMatrix();
     renderer.render(scene, world.camera);
     return;
@@ -692,13 +693,13 @@ function renderWorld(): void {
   const rightWidth = width - rightX;
 
   renderer.setScissorTest(true);
-  renderViewport(world.camera, 0, 0, leftWidth, height);
-  renderViewport(playerTwoCamera, rightX, 0, rightWidth, height);
+  renderViewport(world.camera, 0, 0, leftWidth, height, fullScreenAspect);
+  renderViewport(playerTwoCamera, rightX, 0, rightWidth, height, fullScreenAspect);
   renderer.setScissorTest(false);
 }
 
-function renderViewport(camera: THREE.PerspectiveCamera, x: number, y: number, width: number, height: number): void {
-  camera.aspect = width / height;
+function renderViewport(camera: THREE.PerspectiveCamera, x: number, y: number, width: number, height: number, aspect: number): void {
+  camera.aspect = aspect;
   camera.updateProjectionMatrix();
   world.renderer.setViewport(x, y, width, height);
   world.renderer.setScissor(x, y, width, height);
