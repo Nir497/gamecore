@@ -77,16 +77,18 @@ const rightTurns: Record<DirectionName, DirectionName> = {
 };
 
 const canvasElement = document.querySelector<HTMLCanvasElement>("#game");
+const shellElement = document.querySelector<HTMLElement>(".game-shell");
 const minimapElement = document.querySelector<HTMLCanvasElement>("#minimap");
 const statusNode = document.querySelector<HTMLElement>("#status");
 const scoreOneNode = document.querySelector<HTMLElement>("#score-one");
 const scoreTwoNode = document.querySelector<HTMLElement>("#score-two");
 
-if (!canvasElement || !minimapElement || !statusNode || !scoreOneNode || !scoreTwoNode) {
+if (!canvasElement || !shellElement || !minimapElement || !statusNode || !scoreOneNode || !scoreTwoNode) {
   throw new Error("Missing Tron page elements.");
 }
 
 const canvas = canvasElement;
+const shell = shellElement;
 const minimap = minimapElement;
 const minimapContextNode = minimap.getContext("2d");
 const statusElement = statusNode;
@@ -333,6 +335,7 @@ function resetCycle(cycle: Cycle, x: number, y: number, dir: Direction): void {
 function startRound(): void {
   resetRound(selectedMode === "bot" ? "Bot duel" : "Multiplayer duel");
   roundState = "running";
+  updateModeLayout();
 }
 
 function loop(now: number): void {
@@ -433,11 +436,13 @@ function onKeyDown(event: KeyboardEvent): void {
   }
   if (event.code === "Digit1" || event.code === "Numpad1" || event.key === "1") {
     selectedMode = "bot";
+    updateModeLayout();
     startRound();
     return;
   }
   if (event.code === "Digit2" || event.code === "Numpad2" || event.key === "2") {
     selectedMode = "multiplayer";
+    updateModeLayout();
     startRound();
     return;
   }
@@ -674,32 +679,30 @@ function renderWorld(): void {
   const { renderer, scene } = world;
   const width = canvas.width;
   const height = canvas.height;
-  const fullScreenAspect = width / height;
 
   renderer.setScissorTest(false);
   renderer.setViewport(0, 0, width, height);
   renderer.clear();
 
   if (selectedMode !== "multiplayer") {
-    world.camera.aspect = fullScreenAspect;
+    world.camera.aspect = width / height;
     world.camera.updateProjectionMatrix();
     renderer.render(scene, world.camera);
     return;
   }
 
-  const dividerWidth = Math.max(2, Math.floor(width * 0.002));
-  const leftWidth = Math.floor((width - dividerWidth) / 2);
-  const rightX = leftWidth + dividerWidth;
+  const leftWidth = Math.floor(width / 2);
+  const rightX = leftWidth;
   const rightWidth = width - rightX;
 
   renderer.setScissorTest(true);
-  renderViewport(world.camera, 0, 0, leftWidth, height, fullScreenAspect);
-  renderViewport(playerTwoCamera, rightX, 0, rightWidth, height, fullScreenAspect);
+  renderViewport(world.camera, 0, 0, leftWidth, height);
+  renderViewport(playerTwoCamera, rightX, 0, rightWidth, height);
   renderer.setScissorTest(false);
 }
 
-function renderViewport(camera: THREE.PerspectiveCamera, x: number, y: number, width: number, height: number, aspect: number): void {
-  camera.aspect = aspect;
+function renderViewport(camera: THREE.PerspectiveCamera, x: number, y: number, width: number, height: number): void {
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
   world.renderer.setViewport(x, y, width, height);
   world.renderer.setScissor(x, y, width, height);
@@ -796,6 +799,10 @@ function randomItem<T>(items: T[]): T {
 function updateScores(): void {
   playerOne.scoreElement.textContent = String(scoreOne);
   playerTwo.scoreElement.textContent = String(scoreTwo);
+}
+
+function updateModeLayout(): void {
+  shell.classList.toggle("multiplayer", selectedMode === "multiplayer");
 }
 
 function resize(): void {

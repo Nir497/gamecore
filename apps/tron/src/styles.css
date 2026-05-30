@@ -23,6 +23,25 @@ body {
     linear-gradient(180deg, #070a10 0%, #020306 100%);
 }
 
+.split-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(0, 245, 255, 0), rgba(0, 245, 255, 0.9) 16%, rgba(255, 255, 255, 0.66) 50%, rgba(0, 245, 255, 0.9) 84%, rgba(0, 245, 255, 0));
+  box-shadow: 0 0 18px rgba(0, 245, 255, 0.62);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+  z-index: 1;
+}
+
+.game-shell.multiplayer .split-divider {
+  opacity: 1;
+}
+
 canvas {
   display: block;
   width: 100vw;
@@ -130,11 +149,47 @@ canvas {
   backdrop-filter: blur(12px);
 }
 
+.game-shell.multiplayer .minimap-panel {
+  left: 50%;
+  bottom: 26px;
+  width: clamp(150px, 12vw, 190px);
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
 .minimap-panel canvas {
   display: block;
   width: 100%;
   height: 100%;
   background: #01070b;
+}
+
+.pov-label {
+  position: absolute;
+  bottom: 112px;
+  display: none;
+  padding: 10px 14px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  background: rgba(0, 5, 10, 0.58);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  box-shadow: 0 0 18px color-mix(in srgb, currentColor 34%, transparent);
+}
+
+.game-shell.multiplayer .pov-label {
+  display: block;
+}
+
+.pov-label-one {
+  left: clamp(18px, 3vw, 42px);
+  color: #00f5ff;
+}
+
+.pov-label-two {
+  right: clamp(18px, 3vw, 42px);
+  color: #ff9900;
 }
 
 .controls {
@@ -178,5 +233,17 @@ canvas {
     left: 16px;
     bottom: 56px;
     width: min(150px, calc(100vw - 32px));
+  }
+
+  .game-shell.multiplayer .minimap-panel {
+    left: 50%;
+    bottom: 28px;
+    width: min(138px, 28vw);
+  }
+
+  .pov-label {
+    bottom: 92px;
+    padding: 8px 10px;
+    font-size: 10px;
   }
 }
