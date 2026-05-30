@@ -30,6 +30,16 @@ interface Cycle {
   scoreElement: HTMLElement;
 }
 
+interface TrailRun {
+  cycleId: 1 | 2;
+  direction: DirectionName;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  mesh: THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
+}
+
 const columns = 60;
 const rows = 48;
 const tickMs = 80;
@@ -37,6 +47,7 @@ const cellSize = 0.28;
 const arenaWidth = columns * cellSize;
 const arenaDepth = rows * cellSize;
 const trailHeight = 0.74;
+const trailThickness = cellSize * 0.32;
 const cycleHeight = 0.34;
 const crashDuration = 0.82;
 const hardBotErrorRate = 0.05;
@@ -102,7 +113,7 @@ let scoreTwo = 0;
 let pulseTime = 0;
 let selectedMode: GameMode = "bot";
 
-const trailGeometry = new THREE.BoxGeometry(cellSize * 0.46, trailHeight, cellSize * 0.46);
+const trailGeometry = new THREE.BoxGeometry(1, 1, 1);
 const trailOneMaterial = new THREE.MeshStandardMaterial({
   color: "#006688",
   emissive: "#00b9c8",
@@ -117,20 +128,9 @@ const trailTwoMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.38,
   metalness: 0.16
 });
-const trailOne = new THREE.InstancedMesh(trailGeometry, trailOneMaterial, columns * rows);
-const trailTwo = new THREE.InstancedMesh(trailGeometry, trailTwoMaterial, columns * rows);
-trailOne.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-trailTwo.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-trailOne.frustumCulled = false;
-trailTwo.frustumCulled = false;
-trailOne.castShadow = false;
-trailTwo.castShadow = false;
-trailOne.receiveShadow = false;
-trailTwo.receiveShadow = false;
-world.scene.add(trailOne, trailTwo);
-
-let trailOneCount = 0;
-let trailTwoCount = 0;
+const trailRuns: TrailRun[] = [];
+let activeTrailOne: TrailRun | null = null;
+let activeTrailTwo: TrailRun | null = null;
 
 const playerOne = createCycle(1, "#00ffff", scoreOneElement);
 const playerTwo = createCycle(2, "#ff9900", scoreTwoElement);
@@ -271,10 +271,7 @@ function createCycle(id: 1 | 2, color: string, scoreElement: HTMLElement): Cycle
 
 function resetRound(message: string): void {
   grid.fill(0);
-  trailOneCount = 0;
-  trailTwoCount = 0;
-  trailOne.count = 0;
-  trailTwo.count = 0;
+  clearTrailRuns();
 
   resetCycle(playerOne, 15, 24, directions.right);
   resetCycle(playerTwo, 45, 24, directions.left);
@@ -491,18 +488,61 @@ function markCell(cycle: Cycle): void {
 }
 
 function addTrailSegment(cycle: Cycle, x: number, y: number): void {
-  const matrix = new THREE.Matrix4().makeTranslation(...cellToWorld(x, y, trailHeight / 2));
-  if (cycle.id === 1) {
-    trailOne.setMatrixAt(trailOneCount, matrix);
-    trailOneCount += 1;
-    trailOne.count = trailOneCount;
-    trailOne.instanceMatrix.needsUpdate = true;
-  } else {
-    trailTwo.setMatrixAt(trailTwoCount, matrix);
-    trailTwoCount += 1;
-    trailTwo.count = trailTwoCount;
-    trailTwo.instanceMatrix.needsUpdate = true;
+  const activeRun = cycle.id === 1 ? activeTrailOne : activeTrailTwo;
+  if (activeRun?.direction === cycle.dir.name) {
+    activeRun.endX = x;
+    activeRun.endY = y;
+    updateTrailRunMesh(activeRun);
+    return;
   }
+
+  const material = cycle.id === 1 ? trailOneMaterial : trailTwoMaterial;
+  const mesh = new THREE.Mesh(trailGeometry, material);
+  mesh.frustumCulled = false;
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  world.scene.add(mesh);
+
+  const run: TrailRun = {
+    cycleId: cycle.id,
+    direction: cycle.dir.name,
+    startX: x,
+    startY: y,
+    endX: x,
+    endY: y,
+    mesh
+  };
+  trailRuns.push(run);
+  if (cycle.id === 1) {
+    activeTrailOne = run;
+  } else {
+    activeTrailTwo = run;
+  }
+  updateTrailRunMesh(run);
+}
+
+function clearTrailRuns(): void {
+  for (const run of trailRuns) {
+    world.scene.remove(run.mesh);
+  }
+  trailRuns.length = 0;
+  activeTrailOne = null;
+  activeTrailTwo = null;
+}
+
+function updateTrailRunMesh(run: TrailRun): void {
+  const minX = Math.min(run.startX, run.endX);
+  const maxX = Math.max(run.startX, run.endX);
+  const minY = Math.min(run.startY, run.endY);
+  const maxY = Math.max(run.startY, run.endY);
+  const centerX = (minX + maxX + 1) / 2;
+  const centerY = (minY + maxY + 1) / 2;
+  const [worldX, worldY, worldZ] = cellToWorld(centerX - 0.5, centerY - 0.5, trailHeight / 2);
+  const width = (maxX - minX + 1) * cellSize;
+  const depth = (maxY - minY + 1) * cellSize;
+
+  run.mesh.position.set(worldX, worldY, worldZ);
+  run.mesh.scale.set(Math.max(width, trailThickness), trailHeight, Math.max(depth, trailThickness));
 }
 
 function renderCycles(progress: number): void {

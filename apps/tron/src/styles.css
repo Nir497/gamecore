@@ -106,7 +106,7 @@ canvas {
   justify-self: center;
   align-self: end;
   min-width: min(360px, calc(100vw - 36px));
-  margin: 0 0 216px;
+  margin: 0 0 48px;
   padding: 13px 20px;
   border: 1px solid rgba(112, 227, 255, 0.28);
   border-radius: 8px;
@@ -117,11 +117,10 @@ canvas {
 
 .minimap-panel {
   position: absolute;
-  left: 50%;
+  left: clamp(18px, 3vw, 42px);
   bottom: 54px;
   width: clamp(150px, 17vw, 230px);
   aspect-ratio: 5 / 4;
-  transform: translateX(-50%);
   padding: 9px;
   border: 1px solid rgba(118, 231, 255, 0.34);
   border-radius: 8px;
@@ -172,11 +171,12 @@ canvas {
   }
 
   .status {
-    margin-bottom: 188px;
+    margin-bottom: 58px;
   }
 
   .minimap-panel {
+    left: 16px;
     bottom: 56px;
-    width: min(178px, calc(100vw - 32px));
+    width: min(150px, calc(100vw - 32px));
   }
 }
