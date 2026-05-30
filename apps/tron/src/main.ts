@@ -36,7 +36,7 @@ const tickMs = 80;
 const cellSize = 0.28;
 const arenaWidth = columns * cellSize;
 const arenaDepth = rows * cellSize;
-const trailHeight = 0.18;
+const trailHeight = 0.86;
 const cycleHeight = 0.34;
 const crashDuration = 0.82;
 const hardBotErrorRate = 0.05;
@@ -80,8 +80,8 @@ const world = new ThreeScene({ canvas, background: "#03050a", fov: 64, near: 0.1
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 world.renderer.shadowMap.enabled = true;
 world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-world.camera.position.set(-arenaWidth * 0.5, 4.4, 0);
-world.camera.lookAt(0, 0.9, 0);
+world.camera.position.set(-arenaWidth * 0.62, 1.18, 0);
+world.camera.lookAt(0, 0.42, 0);
 
 const grid: CellValue[] = new Array(columns * rows).fill(0);
 let roundState: RoundState = "idle";
@@ -112,10 +112,12 @@ const trailOne = new THREE.InstancedMesh(trailGeometry, trailOneMaterial, column
 const trailTwo = new THREE.InstancedMesh(trailGeometry, trailTwoMaterial, columns * rows);
 trailOne.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 trailTwo.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-trailOne.castShadow = true;
-trailTwo.castShadow = true;
-trailOne.receiveShadow = true;
-trailTwo.receiveShadow = true;
+trailOne.frustumCulled = false;
+trailTwo.frustumCulled = false;
+trailOne.castShadow = false;
+trailTwo.castShadow = false;
+trailOne.receiveShadow = false;
+trailTwo.receiveShadow = false;
 world.scene.add(trailOne, trailTwo);
 
 let trailOneCount = 0;
@@ -267,8 +269,8 @@ function resetRound(message: string): void {
 
   resetCycle(playerOne, 15, 24, directions.right);
   resetCycle(playerTwo, 45, 24, directions.left);
-  occupy(playerOne);
-  occupy(playerTwo);
+  markCell(playerOne);
+  markCell(playerTwo);
 
   roundState = "idle";
   accumulator = 0;
@@ -353,14 +355,16 @@ function stepRound(): void {
   }
 
   if (!playerOneCrash) {
+    addTrailSegment(playerOne, playerOne.x, playerOne.y);
     playerOne.x = nextOne.x;
     playerOne.y = nextOne.y;
-    occupy(playerOne);
+    markCell(playerOne);
   }
   if (!playerTwoCrash) {
+    addTrailSegment(playerTwo, playerTwo.x, playerTwo.y);
     playerTwo.x = nextTwo.x;
     playerTwo.y = nextTwo.y;
-    occupy(playerTwo);
+    markCell(playerTwo);
   }
 
   if (playerOneCrash || playerTwoCrash) {
@@ -473,9 +477,12 @@ function isCellOpen(x: number, y: number): boolean {
   return x >= 0 && x < columns && y >= 0 && y < rows && grid[indexFor(x, y)] === 0;
 }
 
-function occupy(cycle: Cycle): void {
+function markCell(cycle: Cycle): void {
   grid[indexFor(cycle.x, cycle.y)] = cycle.id;
-  const matrix = new THREE.Matrix4().makeTranslation(...cellToWorld(cycle.x, cycle.y, trailHeight / 2));
+}
+
+function addTrailSegment(cycle: Cycle, x: number, y: number): void {
+  const matrix = new THREE.Matrix4().makeTranslation(...cellToWorld(x, y, trailHeight / 2));
   if (cycle.id === 1) {
     trailOne.setMatrixAt(trailOneCount, matrix);
     trailOneCount += 1;
@@ -515,8 +522,8 @@ function updateRiderCamera(progress: number): void {
   const [worldX, , worldZ] = cellToWorld(x, y, 0);
   const forward = new THREE.Vector3(playerOne.dir.x, 0, playerOne.dir.y).normalize();
 
-  cameraPosition.set(worldX, 4.4, worldZ).addScaledVector(forward, -5.4);
-  cameraTarget.set(worldX, 0.9, worldZ).addScaledVector(forward, 11.8);
+  cameraPosition.set(worldX, 1.18, worldZ).addScaledVector(forward, -8.4);
+  cameraTarget.set(worldX, 0.42, worldZ).addScaledVector(forward, 13.2);
 
   world.camera.position.lerp(cameraPosition, 0.36);
   world.camera.lookAt(cameraTarget);
