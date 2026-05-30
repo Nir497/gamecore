@@ -40,8 +40,7 @@ const trailHeight = 0.18;
 const cycleHeight = 0.34;
 const crashDuration = 0.82;
 const hardBotErrorRate = 0.05;
-const cameraPosition = new THREE.Vector3();
-const cameraTarget = new THREE.Vector3();
+const cameraTarget = new THREE.Vector3(0, 0, 0);
 
 const directions: Record<DirectionName, Direction> = {
   up: { name: "up", x: 0, y: -1, angle: Math.PI },
@@ -77,12 +76,12 @@ const scoreOneElement = scoreOneNode;
 const scoreTwoElement = scoreTwoNode;
 
 const input = new InputManager(canvas);
-const world = new ThreeScene({ canvas, background: "#03050a", fov: 52, near: 0.1, far: 120 });
+const world = new ThreeScene({ canvas, background: "#03050a", fov: 48, near: 0.1, far: 120 });
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 world.renderer.shadowMap.enabled = true;
 world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-world.camera.position.set(-arenaWidth * 0.31, 3.1, 0);
-world.camera.lookAt(0, 0.22, 0);
+world.camera.position.set(0, 8.8, 8.6);
+world.camera.lookAt(cameraTarget);
 
 const grid: CellValue[] = new Array(columns * rows).fill(0);
 let roundState: RoundState = "idle";
@@ -268,7 +267,6 @@ function resetRound(message: string): void {
 
   resetCycle(playerOne, 15, 24, directions.right);
   resetCycle(playerTwo, 45, 24, directions.left);
-  playerOne.mesh.visible = false;
   occupy(playerOne);
   occupy(playerTwo);
 
@@ -497,7 +495,7 @@ function occupy(cycle: Cycle): void {
 function renderCycles(progress: number): void {
   positionCycle(playerOne, progress);
   positionCycle(playerTwo, progress);
-  updateFirstPersonCamera(progress);
+  updateReferenceCamera();
 
   const lightPulse = 0.82 + Math.sin(pulseTime * 9) * 0.18;
   trailOneMaterial.emissiveIntensity = 1.35 + lightPulse * 0.28;
@@ -514,17 +512,10 @@ function positionCycle(cycle: Cycle, progress: number): void {
   cycle.light.color.copy(cycle.headColor);
 }
 
-function updateFirstPersonCamera(progress: number): void {
-  const x = playerOne.fromX + (playerOne.x - playerOne.fromX) * progress;
-  const y = playerOne.fromY + (playerOne.y - playerOne.fromY) * progress;
-  const [worldX, , worldZ] = cellToWorld(x, y, 0);
-  const forward = new THREE.Vector3(playerOne.dir.x, 0, playerOne.dir.y).normalize();
-  const right = new THREE.Vector3(forward.z, 0, -forward.x);
-
-  cameraPosition.set(worldX, 3.1, worldZ).addScaledVector(forward, -1.38).addScaledVector(right, 0.04);
-  cameraTarget.set(worldX, 0.18, worldZ).addScaledVector(forward, 4.4);
-
-  world.camera.position.lerp(cameraPosition, 0.34);
+function updateReferenceCamera(): void {
+  const aspect = canvas.width / canvas.height;
+  const cameraDistance = aspect < 1 ? 13.8 : 11.9;
+  world.camera.position.set(0, cameraDistance * 0.72, cameraDistance * 0.7);
   world.camera.lookAt(cameraTarget);
 }
 
