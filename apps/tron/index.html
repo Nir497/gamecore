@@ -1,39 +1,57 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tron Light Cycles</title>
-    <script type="module" src="./src/main.ts"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tron 3D Light Cycles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <main class="game-shell" aria-label="Tron Light Cycles">
-      <canvas id="game" width="1280" height="720"></canvas>
-      <div class="split-divider" aria-hidden="true"></div>
-      <section class="hud" aria-label="Game status">
-        <div class="brand">
-          <span>Gamecore</span>
-          <h1>Tron</h1>
+    <main id="app" aria-label="Tron 3D Light Cycles">
+      <canvas id="gameCanvas" aria-label="3D Tron light cycle arena"></canvas>
+      <div id="splitDivider" class="split-divider" aria-hidden="true"></div>
+      <div id="viewportLabels" class="viewport-labels" aria-hidden="true">
+        <span id="p1ViewportLabel" class="cyan-label">P1 RIDER POV</span>
+        <span id="p2ViewportLabel" class="orange-label">P2 RIDER POV</span>
+      </div>
+
+      <div id="minimapPanel" class="minimap-panel" aria-label="Live overhead grid map">
+        <canvas id="minimapCanvas" width="180" height="180"></canvas>
+      </div>
+
+      <div class="hud" aria-live="polite">
+        <div class="score-panel cyan">
+          <span>P1</span>
+          <strong id="p1Score">0</strong>
         </div>
-        <div class="scoreboard" aria-live="polite">
-          <span class="player player-one">Player 1: <strong id="score-one">0</strong></span>
-          <span class="divider"></span>
-          <span class="player player-two">Player 2: <strong id="score-two">0</strong></span>
+        <div class="status-panel">
+          <span id="roundState">IDLE</span>
+          <strong id="matchMode">GROUND GRID</strong>
         </div>
-        <p id="status" class="status">Press 1 for bot or 2 for multiplayer</p>
-        <div class="minimap-panel" aria-label="Live grid map">
-          <canvas id="minimap" width="300" height="240"></canvas>
+        <div class="score-panel orange">
+          <span id="p2NameLabel">P2</span>
+          <strong id="p2Score">0</strong>
         </div>
-        <div class="pov-label pov-label-one">P1 Rider POV</div>
-        <div class="pov-label pov-label-two">P2 Rider POV</div>
-        <div class="controls" aria-label="Controls">
-          <span><b>A/D</b> Cyan turns</span>
-          <span><b>Arrows</b> Bot: cyan, multiplayer: orange</span>
-          <span><b>1</b> Bot</span>
-          <span><b>2</b> Multiplayer</span>
-          <span><b>Space</b> Restart</span>
+      </div>
+
+      <section id="overlay" class="overlay" aria-live="assertive">
+        <div id="panel" class="panel">
+          <p class="eyebrow">LIGHT CYCLE PROGRAM</p>
+          <h1><span>TRON</span> 3D</h1>
+          <p class="lead">
+            Race across one shared neon board and leave solid light walls behind every move.
+          </p>
+          <div class="button-row">
+            <button id="startButton" class="primary-button" type="button">Start</button>
+          </div>
+          <p class="hint">P1: WASD &nbsp; P2: Arrow keys</p>
         </div>
       </section>
     </main>
+
+    <script type="module" src="game.js"></script>
   </body>
 </html>
