@@ -106,13 +106,36 @@ canvas {
   justify-self: center;
   align-self: end;
   min-width: min(360px, calc(100vw - 36px));
-  margin: 0 0 48px;
+  margin: 0 0 216px;
   padding: 13px 20px;
   border: 1px solid rgba(112, 227, 255, 0.28);
   border-radius: 8px;
   background: rgba(2, 6, 12, 0.72);
   box-shadow: 0 0 28px rgba(0, 245, 255, 0.16), inset 0 0 20px rgba(0, 245, 255, 0.08);
   text-align: center;
+}
+
+.minimap-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 54px;
+  width: clamp(150px, 17vw, 230px);
+  aspect-ratio: 5 / 4;
+  transform: translateX(-50%);
+  padding: 9px;
+  border: 1px solid rgba(118, 231, 255, 0.34);
+  border-radius: 8px;
+  background: rgba(2, 7, 13, 0.76);
+  box-shadow: 0 0 26px rgba(0, 245, 255, 0.18), inset 0 0 18px rgba(0, 245, 255, 0.08);
+  box-sizing: border-box;
+  backdrop-filter: blur(12px);
+}
+
+.minimap-panel canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #01070b;
 }
 
 .controls {
@@ -149,6 +172,11 @@ canvas {
   }
 
   .status {
-    margin-bottom: 58px;
+    margin-bottom: 188px;
+  }
+
+  .minimap-panel {
+    bottom: 56px;
+    width: min(178px, calc(100vw - 32px));
   }
 }

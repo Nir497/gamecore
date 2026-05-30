@@ -63,18 +63,27 @@ const rightTurns: Record<DirectionName, DirectionName> = {
 };
 
 const canvasElement = document.querySelector<HTMLCanvasElement>("#game");
+const minimapElement = document.querySelector<HTMLCanvasElement>("#minimap");
 const statusNode = document.querySelector<HTMLElement>("#status");
 const scoreOneNode = document.querySelector<HTMLElement>("#score-one");
 const scoreTwoNode = document.querySelector<HTMLElement>("#score-two");
 
-if (!canvasElement || !statusNode || !scoreOneNode || !scoreTwoNode) {
+if (!canvasElement || !minimapElement || !statusNode || !scoreOneNode || !scoreTwoNode) {
   throw new Error("Missing Tron page elements.");
 }
 
 const canvas = canvasElement;
+const minimap = minimapElement;
+const minimapContextNode = minimap.getContext("2d");
 const statusElement = statusNode;
 const scoreOneElement = scoreOneNode;
 const scoreTwoElement = scoreTwoNode;
+
+if (!minimapContextNode) {
+  throw new Error("Missing Tron minimap context.");
+}
+
+const minimapContext = minimapContextNode;
 
 const world = new ThreeScene({ canvas, background: "#03050a", fov: 64, near: 0.1, far: 120 });
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -93,7 +102,7 @@ let scoreTwo = 0;
 let pulseTime = 0;
 let selectedMode: GameMode = "bot";
 
-const trailGeometry = new THREE.BoxGeometry(cellSize * 0.84, trailHeight, cellSize * 0.84);
+const trailGeometry = new THREE.BoxGeometry(cellSize * 0.46, trailHeight, cellSize * 0.46);
 const trailOneMaterial = new THREE.MeshStandardMaterial({
   color: "#006688",
   emissive: "#00b9c8",
@@ -500,10 +509,71 @@ function renderCycles(progress: number): void {
   positionCycle(playerOne, progress);
   positionCycle(playerTwo, progress);
   updateRiderCamera(progress);
+  renderMiniMap(progress);
 
   const lightPulse = 0.82 + Math.sin(pulseTime * 9) * 0.18;
   trailOneMaterial.emissiveIntensity = 1.35 + lightPulse * 0.28;
   trailTwoMaterial.emissiveIntensity = 1.25 + lightPulse * 0.24;
+}
+
+function renderMiniMap(progress: number): void {
+  const width = minimap.width;
+  const height = minimap.height;
+  const cellWidth = width / columns;
+  const cellHeight = height / rows;
+
+  minimapContext.clearRect(0, 0, width, height);
+  minimapContext.fillStyle = "#01070b";
+  minimapContext.fillRect(0, 0, width, height);
+
+  minimapContext.strokeStyle = "rgba(82, 172, 190, 0.16)";
+  minimapContext.lineWidth = Math.max(1, Math.floor(width / 300));
+  for (let x = 0; x <= columns; x += 5) {
+    const mapX = Math.round(x * cellWidth) + 0.5;
+    minimapContext.beginPath();
+    minimapContext.moveTo(mapX, 0);
+    minimapContext.lineTo(mapX, height);
+    minimapContext.stroke();
+  }
+  for (let y = 0; y <= rows; y += 4) {
+    const mapY = Math.round(y * cellHeight) + 0.5;
+    minimapContext.beginPath();
+    minimapContext.moveTo(0, mapY);
+    minimapContext.lineTo(width, mapY);
+    minimapContext.stroke();
+  }
+
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < columns; x += 1) {
+      const value = grid[indexFor(x, y)];
+      if (value === 0) {
+        continue;
+      }
+      minimapContext.fillStyle = value === 1 ? "#00f5ff" : "#ff9900";
+      minimapContext.fillRect(x * cellWidth, y * cellHeight, Math.ceil(cellWidth), Math.ceil(cellHeight));
+    }
+  }
+
+  drawMiniMapHead(playerOne, progress, "#dfffff");
+  drawMiniMapHead(playerTwo, progress, "#ffe0a8");
+
+  minimapContext.strokeStyle = "rgba(172, 241, 255, 0.58)";
+  minimapContext.lineWidth = 2;
+  minimapContext.strokeRect(1, 1, width - 2, height - 2);
+}
+
+function drawMiniMapHead(cycle: Cycle, progress: number, color: string): void {
+  if (!cycle.alive) {
+    return;
+  }
+  const x = cycle.fromX + (cycle.x - cycle.fromX) * progress + 0.5;
+  const y = cycle.fromY + (cycle.y - cycle.fromY) * progress + 0.5;
+  const radius = Math.max(3, minimap.width / columns * 1.15);
+
+  minimapContext.fillStyle = color;
+  minimapContext.beginPath();
+  minimapContext.arc((x / columns) * minimap.width, (y / rows) * minimap.height, radius, 0, Math.PI * 2);
+  minimapContext.fill();
 }
 
 function positionCycle(cycle: Cycle, progress: number): void {
@@ -624,9 +694,14 @@ function updateScores(): void {
 function resize(): void {
   const width = window.innerWidth;
   const height = window.innerHeight;
-  canvas.width = Math.max(1, Math.floor(width * Math.min(window.devicePixelRatio, 2)));
-  canvas.height = Math.max(1, Math.floor(height * Math.min(window.devicePixelRatio, 2)));
+  const pixelRatio = Math.min(window.devicePixelRatio, 2);
+  canvas.width = Math.max(1, Math.floor(width * pixelRatio));
+  canvas.height = Math.max(1, Math.floor(height * pixelRatio));
   world.resize(canvas.width, canvas.height);
   world.renderer.domElement.style.width = `${width}px`;
   world.renderer.domElement.style.height = `${height}px`;
+
+  const minimapRect = minimap.getBoundingClientRect();
+  minimap.width = Math.max(1, Math.floor(minimapRect.width * pixelRatio));
+  minimap.height = Math.max(1, Math.floor(minimapRect.height * pixelRatio));
 }
