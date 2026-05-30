@@ -51,6 +51,9 @@ const trailThickness = cellSize * 0.32;
 const cycleHeight = 0.34;
 const crashDuration = 0.82;
 const hardBotErrorRate = 0.05;
+const cameraFov = 64;
+const cameraNear = 0.1;
+const cameraFar = 120;
 const cameraPosition = new THREE.Vector3();
 const cameraTarget = new THREE.Vector3();
 
@@ -96,12 +99,16 @@ if (!minimapContextNode) {
 
 const minimapContext = minimapContextNode;
 
-const world = new ThreeScene({ canvas, background: "#03050a", fov: 64, near: 0.1, far: 120 });
+const world = new ThreeScene({ canvas, background: "#03050a", fov: cameraFov, near: cameraNear, far: cameraFar });
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+world.renderer.autoClear = false;
 world.renderer.shadowMap.enabled = true;
 world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 world.camera.position.set(-arenaWidth * 0.34, 1.18, 0);
 world.camera.lookAt(0, 0.42, 0);
+const playerTwoCamera = new THREE.PerspectiveCamera(cameraFov, canvas.width / canvas.height, cameraNear, cameraFar);
+playerTwoCamera.position.set(arenaWidth * 0.34, 1.18, 0);
+playerTwoCamera.lookAt(0, 0.42, 0);
 
 const grid: CellValue[] = new Array(columns * rows).fill(0);
 let roundState: RoundState = "idle";
@@ -350,7 +357,7 @@ function loop(now: number): void {
   }
 
   renderCycles(roundState === "running" ? moveProgress : 1);
-  world.render();
+  renderWorld();
   requestAnimationFrame(loop);
 }
 
@@ -571,7 +578,8 @@ function updateTrailRunMesh(run: TrailRun): void {
 function renderCycles(progress: number): void {
   positionCycle(playerOne, progress);
   positionCycle(playerTwo, progress);
-  updateRiderCamera(progress);
+  updateRiderCamera(world.camera, playerOne, progress);
+  updateRiderCamera(playerTwoCamera, playerTwo, progress);
   renderMiniMap(progress);
 
   const lightPulse = 0.82 + Math.sin(pulseTime * 9) * 0.18;
@@ -649,17 +657,52 @@ function positionCycle(cycle: Cycle, progress: number): void {
   cycle.light.color.copy(cycle.headColor);
 }
 
-function updateRiderCamera(progress: number): void {
-  const x = playerOne.fromX + (playerOne.x - playerOne.fromX) * progress;
-  const y = playerOne.fromY + (playerOne.y - playerOne.fromY) * progress;
+function updateRiderCamera(camera: THREE.PerspectiveCamera, cycle: Cycle, progress: number): void {
+  const x = cycle.fromX + (cycle.x - cycle.fromX) * progress;
+  const y = cycle.fromY + (cycle.y - cycle.fromY) * progress;
   const [worldX, , worldZ] = cellToWorld(x, y, 0);
-  const forward = new THREE.Vector3(playerOne.dir.x, 0, playerOne.dir.y).normalize();
+  const forward = new THREE.Vector3(cycle.dir.x, 0, cycle.dir.y).normalize();
 
   cameraPosition.set(worldX, 1.18, worldZ).addScaledVector(forward, -3.35);
   cameraTarget.set(worldX, 0.42, worldZ).addScaledVector(forward, 9.4);
 
-  world.camera.position.lerp(cameraPosition, 0.36);
-  world.camera.lookAt(cameraTarget);
+  camera.position.lerp(cameraPosition, 0.36);
+  camera.lookAt(cameraTarget);
+}
+
+function renderWorld(): void {
+  const { renderer, scene } = world;
+  const width = canvas.width;
+  const height = canvas.height;
+
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, width, height);
+  renderer.clear();
+
+  if (selectedMode !== "multiplayer") {
+    world.camera.aspect = width / height;
+    world.camera.updateProjectionMatrix();
+    renderer.render(scene, world.camera);
+    return;
+  }
+
+  const dividerWidth = Math.max(2, Math.floor(width * 0.002));
+  const leftWidth = Math.floor((width - dividerWidth) / 2);
+  const rightX = leftWidth + dividerWidth;
+  const rightWidth = width - rightX;
+
+  renderer.setScissorTest(true);
+  renderViewport(world.camera, 0, 0, leftWidth, height);
+  renderViewport(playerTwoCamera, rightX, 0, rightWidth, height);
+  renderer.setScissorTest(false);
+}
+
+function renderViewport(camera: THREE.PerspectiveCamera, x: number, y: number, width: number, height: number): void {
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  world.renderer.setViewport(x, y, width, height);
+  world.renderer.setScissor(x, y, width, height);
+  world.renderer.render(world.scene, camera);
 }
 
 function flashCrashedCycles(): void {
@@ -761,6 +804,8 @@ function resize(): void {
   canvas.width = Math.max(1, Math.floor(width * pixelRatio));
   canvas.height = Math.max(1, Math.floor(height * pixelRatio));
   world.resize(canvas.width, canvas.height);
+  playerTwoCamera.aspect = canvas.width / canvas.height;
+  playerTwoCamera.updateProjectionMatrix();
   world.renderer.domElement.style.width = `${width}px`;
   world.renderer.domElement.style.height = `${height}px`;
 
