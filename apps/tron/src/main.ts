@@ -49,6 +49,18 @@ const directions: Record<DirectionName, Direction> = {
   left: { name: "left", x: -1, y: 0, angle: -Math.PI / 2 },
   right: { name: "right", x: 1, y: 0, angle: Math.PI / 2 }
 };
+const leftTurns: Record<DirectionName, DirectionName> = {
+  up: "left",
+  left: "down",
+  down: "right",
+  right: "up"
+};
+const rightTurns: Record<DirectionName, DirectionName> = {
+  up: "right",
+  right: "down",
+  down: "left",
+  left: "up"
+};
 
 const canvasElement = document.querySelector<HTMLCanvasElement>("#game");
 const statusNode = document.querySelector<HTMLElement>("#status");
@@ -69,8 +81,8 @@ const world = new ThreeScene({ canvas, background: "#03050a", fov: 52, near: 0.1
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 world.renderer.shadowMap.enabled = true;
 world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-world.camera.position.set(-arenaWidth * 0.25, 0.72, 0);
-world.camera.lookAt(0, 0.52, 0);
+world.camera.position.set(-arenaWidth * 0.31, 3.1, 0);
+world.camera.lookAt(0, 0.22, 0);
 
 const grid: CellValue[] = new Array(columns * rows).fill(0);
 let roundState: RoundState = "idle";
@@ -307,7 +319,7 @@ function loop(now: number): void {
     resolveTimer += dt;
     flashCrashedCycles();
     if (resolveTimer >= crashDuration) {
-      resetRound("Press Space");
+      resetRound("Press 1 for bot or 2 for multiplayer");
     }
   }
 
@@ -382,15 +394,15 @@ function finishRound(playerOneCrash: boolean, playerTwoCrash: boolean): void {
 }
 
 function onKeyDown(event: KeyboardEvent): void {
-  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "Digit1", "Digit2"].includes(event.code)) {
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "Digit1", "Digit2", "Numpad1", "Numpad2"].includes(event.code)) {
     event.preventDefault();
   }
-  if (event.code === "Digit1") {
+  if (event.code === "Digit1" || event.code === "Numpad1") {
     selectedMode = "bot";
     startRound();
     return;
   }
-  if (event.code === "Digit2") {
+  if (event.code === "Digit2" || event.code === "Numpad2") {
     selectedMode = "multiplayer";
     startRound();
     return;
@@ -403,24 +415,47 @@ function onKeyDown(event: KeyboardEvent): void {
     return;
   }
 
-  const playerOneDirection = keyToDirection(event.code, false);
+  const playerOneDirection = keyToPlayerDirection(event.code, playerOne, false);
   if (playerOneDirection) {
     playerOne.pendingDir = playerOneDirection;
     return;
   }
 
-  const playerTwoDirection = keyToDirection(event.code, true);
+  const playerTwoDirection = keyToPlayerDirection(event.code, playerTwo, true);
   if (playerTwoDirection && selectedMode === "multiplayer") {
     playerTwo.pendingDir = playerTwoDirection;
   }
 }
 
-function keyToDirection(code: string, arrows: boolean): Direction | null {
-  const map: Record<string, DirectionName> = arrows
-    ? { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" }
-    : { KeyW: "up", KeyS: "down", KeyA: "left", KeyD: "right" };
-  const name = map[code];
-  return name ? directions[name] : null;
+function keyToPlayerDirection(code: string, cycle: Cycle, arrows: boolean): Direction | null {
+  if (arrows) {
+    if (code === "ArrowLeft") {
+      return turn(cycle, "left");
+    }
+    if (code === "ArrowRight") {
+      return turn(cycle, "right");
+    }
+    if (code === "ArrowUp") {
+      return cycle.dir;
+    }
+    return null;
+  }
+
+  if (code === "KeyA") {
+    return turn(cycle, "left");
+  }
+  if (code === "KeyD") {
+    return turn(cycle, "right");
+  }
+  if (code === "KeyW") {
+    return cycle.dir;
+  }
+  return null;
+}
+
+function turn(cycle: Cycle, side: "left" | "right"): Direction {
+  const nextName = side === "left" ? leftTurns[cycle.dir.name] : rightTurns[cycle.dir.name];
+  return directions[nextName];
 }
 
 function applyPendingDirection(cycle: Cycle): void {
@@ -486,10 +521,10 @@ function updateFirstPersonCamera(progress: number): void {
   const forward = new THREE.Vector3(playerOne.dir.x, 0, playerOne.dir.y).normalize();
   const right = new THREE.Vector3(forward.z, 0, -forward.x);
 
-  cameraPosition.set(worldX, 0.58, worldZ).addScaledVector(forward, 0.26).addScaledVector(right, 0.03);
-  cameraTarget.set(worldX, 0.46, worldZ).addScaledVector(forward, 5.2);
+  cameraPosition.set(worldX, 3.1, worldZ).addScaledVector(forward, -1.38).addScaledVector(right, 0.04);
+  cameraTarget.set(worldX, 0.18, worldZ).addScaledVector(forward, 4.4);
 
-  world.camera.position.lerp(cameraPosition, 0.42);
+  world.camera.position.lerp(cameraPosition, 0.34);
   world.camera.lookAt(cameraTarget);
 }
 
