@@ -5,6 +5,7 @@ import { InputManager, ThreeScene } from "../../../src/engine";
 type CellValue = 0 | 1 | 2;
 type RoundState = "idle" | "running" | "resolving";
 type DirectionName = "up" | "down" | "left" | "right";
+type GameMode = "bot" | "multiplayer";
 
 interface Direction {
   name: DirectionName;
@@ -39,6 +40,8 @@ const trailHeight = 0.18;
 const cycleHeight = 0.34;
 const crashDuration = 0.82;
 const hardBotErrorRate = 0.05;
+const cameraPosition = new THREE.Vector3();
+const cameraTarget = new THREE.Vector3();
 
 const directions: Record<DirectionName, Direction> = {
   up: { name: "up", x: 0, y: -1, angle: Math.PI },
@@ -66,8 +69,8 @@ const world = new ThreeScene({ canvas, background: "#03050a", fov: 52, near: 0.1
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 world.renderer.shadowMap.enabled = true;
 world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-world.camera.position.set(0, 12.6, 12.8);
-world.camera.lookAt(0, 0, 0);
+world.camera.position.set(-arenaWidth * 0.25, 0.72, 0);
+world.camera.lookAt(0, 0.52, 0);
 
 const grid: CellValue[] = new Array(columns * rows).fill(0);
 let roundState: RoundState = "idle";
@@ -77,7 +80,7 @@ let resolveTimer = 0;
 let scoreOne = 0;
 let scoreTwo = 0;
 let pulseTime = 0;
-let playerTwoManualDirection: Direction | null = null;
+let selectedMode: GameMode = "bot";
 
 const trailGeometry = new THREE.BoxGeometry(cellSize * 0.84, trailHeight, cellSize * 0.84);
 const trailOneMaterial = new THREE.MeshStandardMaterial({
@@ -111,7 +114,7 @@ const playerOne = createCycle(1, "#00ffff", scoreOneElement);
 const playerTwo = createCycle(2, "#ff9900", scoreTwoElement);
 
 setupScene();
-resetRound("Press Space");
+resetRound("Press 1 for bot or 2 for multiplayer");
 resize();
 window.addEventListener("resize", resize);
 window.addEventListener("keydown", onKeyDown, { passive: false });
@@ -253,6 +256,7 @@ function resetRound(message: string): void {
 
   resetCycle(playerOne, 15, 24, directions.right);
   resetCycle(playerTwo, 45, 24, directions.left);
+  playerOne.mesh.visible = false;
   occupy(playerOne);
   occupy(playerTwo);
 
@@ -282,7 +286,7 @@ function startRound(): void {
   if (roundState === "running") {
     return;
   }
-  resetRound("Game on");
+  resetRound(selectedMode === "bot" ? "Bot duel" : "Multiplayer duel");
   roundState = "running";
 }
 
@@ -315,8 +319,9 @@ function loop(now: number): void {
 
 function stepRound(): void {
   applyPendingDirection(playerOne);
-  playerTwo.pendingDir = playerTwoManualDirection ?? chooseBotDirection(playerTwo, playerOne);
-  playerTwoManualDirection = null;
+  if (selectedMode === "bot") {
+    playerTwo.pendingDir = chooseBotDirection(playerTwo, playerOne);
+  }
   applyPendingDirection(playerTwo);
 
   const nextOne = nextCell(playerOne);
@@ -377,8 +382,18 @@ function finishRound(playerOneCrash: boolean, playerTwoCrash: boolean): void {
 }
 
 function onKeyDown(event: KeyboardEvent): void {
-  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) {
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "Digit1", "Digit2"].includes(event.code)) {
     event.preventDefault();
+  }
+  if (event.code === "Digit1") {
+    selectedMode = "bot";
+    startRound();
+    return;
+  }
+  if (event.code === "Digit2") {
+    selectedMode = "multiplayer";
+    startRound();
+    return;
   }
   if (event.code === "Space") {
     startRound();
@@ -395,9 +410,8 @@ function onKeyDown(event: KeyboardEvent): void {
   }
 
   const playerTwoDirection = keyToDirection(event.code, true);
-  if (playerTwoDirection) {
+  if (playerTwoDirection && selectedMode === "multiplayer") {
     playerTwo.pendingDir = playerTwoDirection;
-    playerTwoManualDirection = playerTwoDirection;
   }
 }
 
@@ -448,6 +462,7 @@ function occupy(cycle: Cycle): void {
 function renderCycles(progress: number): void {
   positionCycle(playerOne, progress);
   positionCycle(playerTwo, progress);
+  updateFirstPersonCamera(progress);
 
   const lightPulse = 0.82 + Math.sin(pulseTime * 9) * 0.18;
   trailOneMaterial.emissiveIntensity = 1.35 + lightPulse * 0.28;
@@ -462,6 +477,20 @@ function positionCycle(cycle: Cycle, progress: number): void {
   cycle.mesh.rotation.y = cycle.dir.angle;
   cycle.mesh.position.y += Math.sin(pulseTime * 16 + cycle.id) * 0.018;
   cycle.light.color.copy(cycle.headColor);
+}
+
+function updateFirstPersonCamera(progress: number): void {
+  const x = playerOne.fromX + (playerOne.x - playerOne.fromX) * progress;
+  const y = playerOne.fromY + (playerOne.y - playerOne.fromY) * progress;
+  const [worldX, , worldZ] = cellToWorld(x, y, 0);
+  const forward = new THREE.Vector3(playerOne.dir.x, 0, playerOne.dir.y).normalize();
+  const right = new THREE.Vector3(forward.z, 0, -forward.x);
+
+  cameraPosition.set(worldX, 0.58, worldZ).addScaledVector(forward, 0.26).addScaledVector(right, 0.03);
+  cameraTarget.set(worldX, 0.46, worldZ).addScaledVector(forward, 5.2);
+
+  world.camera.position.lerp(cameraPosition, 0.42);
+  world.camera.lookAt(cameraTarget);
 }
 
 function flashCrashedCycles(): void {
