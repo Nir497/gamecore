@@ -10,7 +10,8 @@ export default defineConfig({
         "blank-2d": resolve(__dirname, "apps/blank-2d/index.html"),
         "blank-3d": resolve(__dirname, "apps/blank-3d/index.html"),
         pacman: resolve(__dirname, "apps/pacman/index.html"),
-        "space-invaders": resolve(__dirname, "apps/space-invaders/index.html")
+        "space-invaders": resolve(__dirname, "apps/space-invaders/index.html"),
+        tron: resolve(__dirname, "apps/tron/index.html")
       }
     }
   },

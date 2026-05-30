@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tron Light Cycles</title>
+    <script type="module" src="./src/main.ts"></script>
+  </head>
+  <body>
+    <main class="game-shell" aria-label="Tron Light Cycles">
+      <canvas id="game" width="1280" height="720"></canvas>
+      <section class="hud" aria-label="Game status">
+        <div class="brand">
+          <span>Gamecore</span>
+          <h1>Tron</h1>
+        </div>
+        <div class="scoreboard" aria-live="polite">
+          <span class="player player-one">Player 1: <strong id="score-one">0</strong></span>
+          <span class="divider"></span>
+          <span class="player player-two">Player 2: <strong id="score-two">0</strong></span>
+        </div>
+        <p id="status" class="status">Press Space</p>
+        <div class="controls" aria-label="Controls">
+          <span><b>WASD</b> Cyan</span>
+          <span><b>Arrows</b> Orange</span>
+          <span><b>Space</b> Start</span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
