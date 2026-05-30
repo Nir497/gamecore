@@ -40,7 +40,8 @@ const trailHeight = 0.18;
 const cycleHeight = 0.34;
 const crashDuration = 0.82;
 const hardBotErrorRate = 0.05;
-const cameraTarget = new THREE.Vector3(0, 0, 0);
+const cameraPosition = new THREE.Vector3();
+const cameraTarget = new THREE.Vector3();
 
 const directions: Record<DirectionName, Direction> = {
   up: { name: "up", x: 0, y: -1, angle: Math.PI },
@@ -76,12 +77,12 @@ const scoreOneElement = scoreOneNode;
 const scoreTwoElement = scoreTwoNode;
 
 const input = new InputManager(canvas);
-const world = new ThreeScene({ canvas, background: "#03050a", fov: 48, near: 0.1, far: 120 });
+const world = new ThreeScene({ canvas, background: "#03050a", fov: 58, near: 0.1, far: 120 });
 world.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 world.renderer.shadowMap.enabled = true;
 world.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-world.camera.position.set(0, 8.8, 8.6);
-world.camera.lookAt(cameraTarget);
+world.camera.position.set(-arenaWidth * 0.28, 1.35, 0);
+world.camera.lookAt(0, 0.25, 0);
 
 const grid: CellValue[] = new Array(columns * rows).fill(0);
 let roundState: RoundState = "idle";
@@ -92,6 +93,8 @@ let scoreOne = 0;
 let scoreTwo = 0;
 let pulseTime = 0;
 let selectedMode: GameMode = "bot";
+let lastPlayerOneHeldTurn: "left" | "right" | null = null;
+let lastPlayerTwoHeldTurn: "left" | "right" | null = null;
 
 const trailGeometry = new THREE.BoxGeometry(cellSize * 0.84, trailHeight, cellSize * 0.84);
 const trailOneMaterial = new THREE.MeshStandardMaterial({
@@ -274,6 +277,8 @@ function resetRound(message: string): void {
   accumulator = 0;
   moveProgress = 1;
   resolveTimer = 0;
+  lastPlayerOneHeldTurn = null;
+  lastPlayerTwoHeldTurn = null;
   statusElement.textContent = message;
   updateScores();
   renderCycles(1);
@@ -293,9 +298,6 @@ function resetCycle(cycle: Cycle, x: number, y: number, dir: Direction): void {
 }
 
 function startRound(): void {
-  if (roundState === "running") {
-    return;
-  }
   resetRound(selectedMode === "bot" ? "Bot duel" : "Multiplayer duel");
   roundState = "running";
 }
@@ -306,6 +308,7 @@ function loop(now: number): void {
   pulseTime += dt;
 
   if (roundState === "running") {
+    readHeldTurnControls();
     accumulator += dt * 1000;
     moveProgress = Math.min(accumulator / tickMs, 1);
     while (accumulator >= tickMs) {
@@ -395,12 +398,12 @@ function onKeyDown(event: KeyboardEvent): void {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "Digit1", "Digit2", "Numpad1", "Numpad2"].includes(event.code)) {
     event.preventDefault();
   }
-  if (event.code === "Digit1" || event.code === "Numpad1") {
+  if (event.code === "Digit1" || event.code === "Numpad1" || event.key === "1") {
     selectedMode = "bot";
     startRound();
     return;
   }
-  if (event.code === "Digit2" || event.code === "Numpad2") {
+  if (event.code === "Digit2" || event.code === "Numpad2" || event.key === "2") {
     selectedMode = "multiplayer";
     startRound();
     return;
@@ -410,6 +413,9 @@ function onKeyDown(event: KeyboardEvent): void {
     return;
   }
   if (roundState !== "running") {
+    return;
+  }
+  if (event.repeat) {
     return;
   }
 
@@ -452,8 +458,23 @@ function keyToPlayerDirection(code: string, cycle: Cycle, arrows: boolean): Dire
 }
 
 function turn(cycle: Cycle, side: "left" | "right"): Direction {
-  const nextName = side === "left" ? leftTurns[cycle.dir.name] : rightTurns[cycle.dir.name];
+  const baseDirection = cycle.pendingDir;
+  const nextName = side === "left" ? leftTurns[baseDirection.name] : rightTurns[baseDirection.name];
   return directions[nextName];
+}
+
+function readHeldTurnControls(): void {
+  const playerOneHeldTurn = input.isKeyDown("KeyA") ? "left" : input.isKeyDown("KeyD") ? "right" : null;
+  if (playerOneHeldTurn && playerOneHeldTurn !== lastPlayerOneHeldTurn) {
+    playerOne.pendingDir = turn(playerOne, playerOneHeldTurn);
+  }
+  lastPlayerOneHeldTurn = playerOneHeldTurn;
+
+  const playerTwoHeldTurn = input.isKeyDown("ArrowLeft") ? "left" : input.isKeyDown("ArrowRight") ? "right" : null;
+  if (selectedMode === "multiplayer" && playerTwoHeldTurn && playerTwoHeldTurn !== lastPlayerTwoHeldTurn) {
+    playerTwo.pendingDir = turn(playerTwo, playerTwoHeldTurn);
+  }
+  lastPlayerTwoHeldTurn = playerTwoHeldTurn;
 }
 
 function applyPendingDirection(cycle: Cycle): void {
@@ -495,7 +516,7 @@ function occupy(cycle: Cycle): void {
 function renderCycles(progress: number): void {
   positionCycle(playerOne, progress);
   positionCycle(playerTwo, progress);
-  updateReferenceCamera();
+  updateRiderCamera(progress);
 
   const lightPulse = 0.82 + Math.sin(pulseTime * 9) * 0.18;
   trailOneMaterial.emissiveIntensity = 1.35 + lightPulse * 0.28;
@@ -512,10 +533,17 @@ function positionCycle(cycle: Cycle, progress: number): void {
   cycle.light.color.copy(cycle.headColor);
 }
 
-function updateReferenceCamera(): void {
-  const aspect = canvas.width / canvas.height;
-  const cameraDistance = aspect < 1 ? 13.8 : 11.9;
-  world.camera.position.set(0, cameraDistance * 0.72, cameraDistance * 0.7);
+function updateRiderCamera(progress: number): void {
+  const x = playerOne.fromX + (playerOne.x - playerOne.fromX) * progress;
+  const y = playerOne.fromY + (playerOne.y - playerOne.fromY) * progress;
+  const [worldX, , worldZ] = cellToWorld(x, y, 0);
+  const forward = new THREE.Vector3(playerOne.dir.x, 0, playerOne.dir.y).normalize();
+  const right = new THREE.Vector3(forward.z, 0, -forward.x);
+
+  cameraPosition.set(worldX, 1.55, worldZ).addScaledVector(forward, -1.16).addScaledVector(right, 0.04);
+  cameraTarget.set(worldX, 0.24, worldZ).addScaledVector(forward, 6.8);
+
+  world.camera.position.lerp(cameraPosition, 0.45);
   world.camera.lookAt(cameraTarget);
 }
 
