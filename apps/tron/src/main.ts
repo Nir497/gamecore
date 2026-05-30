@@ -40,6 +40,13 @@ interface TrailRun {
   mesh: THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial>;
 }
 
+interface CameraRig {
+  camera: THREE.PerspectiveCamera;
+  cycle: Cycle;
+  position: THREE.Vector3;
+  target: THREE.Vector3;
+}
+
 const columns = 72;
 const rows = 72;
 const tickMs = 80;
@@ -54,8 +61,6 @@ const hardBotErrorRate = 0.05;
 const cameraFov = 64;
 const cameraNear = 0.1;
 const cameraFar = 120;
-const cameraPosition = new THREE.Vector3();
-const cameraTarget = new THREE.Vector3();
 
 const directions: Record<DirectionName, Direction> = {
   up: { name: "up", x: 0, y: -1, angle: Math.PI },
@@ -143,6 +148,8 @@ let activeTrailTwo: TrailRun | null = null;
 
 const playerOne = createCycle(1, "#00ffff", scoreOneElement);
 const playerTwo = createCycle(2, "#ff9900", scoreTwoElement);
+const playerOneCameraRig = createCameraRig(world.camera, playerOne);
+const playerTwoCameraRig = createCameraRig(playerTwoCamera, playerTwo);
 
 setupScene();
 resetRound("Press 1 for bot or 2 for multiplayer");
@@ -298,6 +305,15 @@ function createCycle(id: 1 | 2, color: string, scoreElement: HTMLElement): Cycle
     light,
     headColor,
     scoreElement
+  };
+}
+
+function createCameraRig(camera: THREE.PerspectiveCamera, cycle: Cycle): CameraRig {
+  return {
+    camera,
+    cycle,
+    position: new THREE.Vector3(),
+    target: new THREE.Vector3()
   };
 }
 
@@ -583,8 +599,8 @@ function updateTrailRunMesh(run: TrailRun): void {
 function renderCycles(progress: number): void {
   positionCycle(playerOne, progress);
   positionCycle(playerTwo, progress);
-  updateRiderCamera(world.camera, playerOne, progress);
-  updateRiderCamera(playerTwoCamera, playerTwo, progress);
+  updateRiderCamera(playerOneCameraRig, progress);
+  updateRiderCamera(playerTwoCameraRig, progress);
   renderMiniMap(progress);
 
   const lightPulse = 0.82 + Math.sin(pulseTime * 9) * 0.18;
@@ -662,17 +678,18 @@ function positionCycle(cycle: Cycle, progress: number): void {
   cycle.light.color.copy(cycle.headColor);
 }
 
-function updateRiderCamera(camera: THREE.PerspectiveCamera, cycle: Cycle, progress: number): void {
+function updateRiderCamera(rig: CameraRig, progress: number): void {
+  const { camera, cycle } = rig;
   const x = cycle.fromX + (cycle.x - cycle.fromX) * progress;
   const y = cycle.fromY + (cycle.y - cycle.fromY) * progress;
   const [worldX, , worldZ] = cellToWorld(x, y, 0);
   const forward = new THREE.Vector3(cycle.dir.x, 0, cycle.dir.y).normalize();
 
-  cameraPosition.set(worldX, 1.18, worldZ).addScaledVector(forward, -3.35);
-  cameraTarget.set(worldX, 0.42, worldZ).addScaledVector(forward, 9.4);
+  rig.position.set(worldX, 1.18, worldZ).addScaledVector(forward, -3.35);
+  rig.target.set(worldX, 0.42, worldZ).addScaledVector(forward, 9.4);
 
-  camera.position.lerp(cameraPosition, 0.36);
-  camera.lookAt(cameraTarget);
+  camera.position.lerp(rig.position, 0.36);
+  camera.lookAt(rig.target);
 }
 
 function renderWorld(): void {
@@ -696,8 +713,8 @@ function renderWorld(): void {
   const rightWidth = width - rightX;
 
   renderer.setScissorTest(true);
-  renderViewport(world.camera, 0, 0, leftWidth, height);
-  renderViewport(playerTwoCamera, rightX, 0, rightWidth, height);
+  renderViewport(playerOneCameraRig.camera, 0, 0, leftWidth, height);
+  renderViewport(playerTwoCameraRig.camera, rightX, 0, rightWidth, height);
   renderer.setScissorTest(false);
 }
 
