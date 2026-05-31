@@ -20,7 +20,7 @@ interface PlayerRecord {
 
 interface Bot {
   record: PlayerRecord;
-  mesh: THREE.Mesh;
+  mesh: THREE.Group;
   target: THREE.Vector3;
   speed: number;
   floor: number;
@@ -106,9 +106,11 @@ const players: PlayerRecord[] = [{ name: "You", role: "Innocent", alive: true }]
 const bots: Bot[] = [];
 const obstacles: Obstacle[] = [];
 const collidableMeshes: THREE.Object3D[] = [];
+const playerPosition = new THREE.Vector3(0, 0.65, 6);
 const tempDirection = new THREE.Vector3();
 const moveVector = new THREE.Vector3();
 const rayDirection = new THREE.Vector3();
+let playerMesh: THREE.Group | undefined;
 
 function resize(): void {
   const width = window.innerWidth;
@@ -134,6 +136,7 @@ function clearScene(): void {
   }
   obstacles.length = 0;
   collidableMeshes.length = 0;
+  playerMesh = undefined;
 }
 
 function material(color: THREE.ColorRepresentation, roughness = 0.72): THREE.MeshStandardMaterial {
@@ -165,6 +168,29 @@ function addObstacle(size: THREE.Vector3, position: THREE.Vector3, color: THREE.
     maxZ: position.z + size.z / 2,
     floor
   });
+}
+
+function createCharacter(color: THREE.ColorRepresentation, name: string): THREE.Group {
+  const group = new THREE.Group();
+  group.name = name;
+
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.85, 4, 10), material(color));
+  body.position.y = 0.66;
+  body.castShadow = true;
+  body.receiveShadow = true;
+  group.add(body);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), material("#e8d2bd", 0.64));
+  head.position.y = 1.38;
+  head.castShadow = true;
+  group.add(head);
+
+  const marker = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.08, 0.16), material("#f8fafc", 0.5));
+  marker.position.set(0, 1.08, -0.31);
+  marker.castShadow = true;
+  group.add(marker);
+
+  return group;
 }
 
 function addLights(baseColor: THREE.ColorRepresentation): void {
@@ -206,6 +232,17 @@ function buildLobby(): void {
   pitch = -0.05;
 }
 
+function spawnPlayerCharacter(): void {
+  if (playerRole === "Pending") {
+    return;
+  }
+
+  playerMesh = createCharacter(botColors[playerRole], "You");
+  playerMesh.position.copy(playerPosition);
+  playerMesh.rotation.y = yaw;
+  world.scene.add(playerMesh);
+}
+
 function buildHouse(): void {
   clearScene();
   addLights(selectedMap.color);
@@ -236,10 +273,12 @@ function buildHouse(): void {
   addBox(new THREE.Vector3(0.2, 2.9, 0.2), new THREE.Vector3(-3.2, 1.55, 5.5), "#a1a9b8");
   addBox(new THREE.Vector3(0.2, 2.9, 0.2), new THREE.Vector3(3.2, 1.55, 5.5), "#a1a9b8");
 
-  world.camera.position.set(0, 1.65, 6);
+  playerPosition.set(0, 0.65, 6);
   playerFloor = 0;
   yaw = Math.PI;
-  pitch = 0;
+  pitch = -0.18;
+  spawnPlayerCharacter();
+  updateCamera();
 }
 
 function randomHousePoint(floor: number): THREE.Vector3 {
@@ -278,12 +317,7 @@ function spawnBots(): void {
   for (let i = 1; i < players.length; i += 1) {
     const record = players[i];
     const floor = i % 2;
-    const mesh = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.34, 0.85, 4, 8),
-      material(botColors[record.role])
-    );
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    const mesh = createCharacter(botColors[record.role], record.name);
     mesh.position.copy(randomHousePoint(floor));
     world.scene.add(mesh);
     bots.push({
@@ -326,7 +360,7 @@ function updateHud(): void {
     phase === "lobby"
       ? "Press Space to enter the selected map"
       : phase === "round"
-        ? "Click canvas to look around. WASD moves, mouse looks. Left click uses your role action."
+        ? "Move mouse to look around. WASD moves. Left click uses your role action."
         : "Round complete";
 
   votePanel.classList.toggle("hidden", phase !== "lobby");
@@ -407,18 +441,30 @@ function moveActor(position: THREE.Vector3, delta: THREE.Vector3, floor: number)
   }
 }
 
+function updateCamera(): void {
+  const cameraDistance = 5.6;
+  const cameraHeight = 2.4;
+  const lookTarget = playerPosition.clone().add(new THREE.Vector3(0, 1.12, 0));
+  const horizontalDistance = cameraDistance * Math.cos(Math.abs(pitch));
+  const cameraOffset = new THREE.Vector3(
+    Math.sin(yaw) * horizontalDistance,
+    cameraHeight + Math.sin(-pitch) * 2.6,
+    Math.cos(yaw) * horizontalDistance
+  );
+
+  world.camera.position.copy(lookTarget).add(cameraOffset);
+  world.camera.lookAt(lookTarget);
+}
+
 function updatePlayer(dt: number): void {
   if (phase !== "round" || !playerAlive) {
     return;
   }
 
-  if (input.pointer.locked) {
-    yaw -= input.pointer.movementX * 0.0022;
-    pitch -= input.pointer.movementY * 0.002;
-    pitch = THREE.MathUtils.clamp(pitch, -1.18, 1.18);
-  }
+  yaw -= input.pointer.movementX * 0.0026;
+  pitch += input.pointer.movementY * 0.0022;
+  pitch = THREE.MathUtils.clamp(pitch, -0.8, 0.55);
 
-  world.camera.rotation.set(pitch, yaw, 0);
   tempDirection.set(0, 0, 0);
   if (input.isKeyDown("KeyW")) tempDirection.z -= 1;
   if (input.isKeyDown("KeyS")) tempDirection.z += 1;
@@ -429,16 +475,25 @@ function updatePlayer(dt: number): void {
     tempDirection.normalize();
     moveVector.set(tempDirection.x, 0, tempDirection.z).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     moveVector.multiplyScalar(4.2 * dt);
-    moveActor(world.camera.position, moveVector, playerFloor);
+    moveActor(playerPosition, moveVector, playerFloor);
+    if (playerMesh) {
+      playerMesh.rotation.y = Math.atan2(moveVector.x, moveVector.z);
+    }
   }
 
-  if (world.camera.position.x > -3.4 && world.camera.position.x < 3.4 && world.camera.position.z > 1.6 && world.camera.position.z < 8.4) {
-    const progress = THREE.MathUtils.clamp((world.camera.position.z - 1.6) / 6.8, 0, 1);
+  if (playerPosition.x > -3.4 && playerPosition.x < 3.4 && playerPosition.z > 1.6 && playerPosition.z < 8.4) {
+    const progress = THREE.MathUtils.clamp((playerPosition.z - 1.6) / 6.8, 0, 1);
     playerFloor = progress > 0.52 ? 1 : 0;
-    world.camera.position.y = 1.65 + progress * floorHeights[1];
+    playerPosition.y = 0.65 + progress * floorHeights[1];
   } else {
-    world.camera.position.y = floorHeights[playerFloor] + 1.65;
+    playerPosition.y = floorHeights[playerFloor] + 0.65;
   }
+
+  if (playerMesh) {
+    playerMesh.position.copy(playerPosition);
+    playerMesh.visible = playerAlive;
+  }
+  updateCamera();
 }
 
 function updateBots(dt: number): void {
@@ -470,7 +525,7 @@ function nearestLivingBot(maxDistance: number): Bot | undefined {
     if (!bot.record.alive || bot.floor !== playerFloor) {
       continue;
     }
-    const distance = bot.mesh.position.distanceTo(world.camera.position);
+    const distance = bot.mesh.position.distanceTo(playerPosition);
     if (distance < nearestDistance) {
       nearest = bot;
       nearestDistance = distance;
@@ -498,9 +553,9 @@ function performAction(): void {
   if (playerRole === "Sheriff") {
     world.camera.getWorldDirection(rayDirection);
     const raycaster = new THREE.Raycaster(world.camera.position, rayDirection, 0, 18);
-    const hits = raycaster.intersectObjects(bots.map((bot) => bot.mesh), false);
+    const hits = raycaster.intersectObjects(bots.map((bot) => bot.mesh), true);
     const hitMesh = hits[0]?.object;
-    const hitBot = bots.find((bot) => bot.mesh === hitMesh);
+    const hitBot = bots.find((bot) => hitMesh && (bot.mesh === hitMesh || bot.mesh.children.includes(hitMesh)));
     if (!hitBot || !hitBot.record.alive) {
       showToast("Shot missed");
       return;
@@ -524,7 +579,7 @@ function botMurdererLogic(): void {
   if (!murderer || !playerAlive || playerRole === "Murderer" || murderer.floor !== playerFloor) {
     return;
   }
-  if (murderer.mesh.position.distanceTo(world.camera.position) < 1.45) {
+  if (murderer.mesh.position.distanceTo(playerPosition) < 1.45) {
     playerAlive = false;
     players[0].alive = false;
     endRound("The murderer caught you.");
@@ -567,11 +622,7 @@ function update(dt: number): void {
     updateBots(dt);
     botMurdererLogic();
     if (input.wasMousePressed(0)) {
-      if (!input.pointer.locked) {
-        void input.requestPointerLock();
-      } else {
-        performAction();
-      }
+      performAction();
     }
     checkWinConditions();
   }
