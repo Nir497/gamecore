@@ -80,7 +80,7 @@ const stairBounds = {
   minX: -3.2,
   maxX: 3.2,
   minZ: 1.6,
-  maxZ: 8.4
+  maxZ: 7.2
 };
 const botColors: Record<Role, string> = {
   Innocent: "#63b3ed",
@@ -185,15 +185,16 @@ function addObstacle(size: THREE.Vector3, position: THREE.Vector3, color: THREE.
 }
 
 function addFloorWithStairOpening(y: number): void {
-  addBox(new THREE.Vector3(22, 0.22, 10.4), new THREE.Vector3(0, y, -3.8), "#323b4a", false);
-  addBox(new THREE.Vector3(7.4, 0.22, 7.2), new THREE.Vector3(-7.3, y, 5.4), "#323b4a", false);
-  addBox(new THREE.Vector3(7.4, 0.22, 7.2), new THREE.Vector3(7.3, y, 5.4), "#323b4a", false);
-  addBox(new THREE.Vector3(22, 0.22, 0.8), new THREE.Vector3(0, y, 8.6), "#323b4a", false);
+  addBox(new THREE.Vector3(22, 0.22, 10.2), new THREE.Vector3(0, y, -4), "#323b4a", false);
+  addBox(new THREE.Vector3(7.4, 0.22, 7.6), new THREE.Vector3(-7.3, y, 4.8), "#323b4a", false);
+  addBox(new THREE.Vector3(7.4, 0.22, 7.6), new THREE.Vector3(7.3, y, 4.8), "#323b4a", false);
+  addBox(new THREE.Vector3(7.2, 0.22, 1.9), new THREE.Vector3(0, y, 7.45), "#323b4a", false);
+  addBox(new THREE.Vector3(22, 0.22, 0.4), new THREE.Vector3(0, y, 8.8), "#323b4a", false);
 
   const railY = y + 0.52;
-  addBox(new THREE.Vector3(0.18, 1, 6.9), new THREE.Vector3(-3.55, railY, 5.05), "#8b95a6");
-  addBox(new THREE.Vector3(0.18, 1, 6.9), new THREE.Vector3(3.55, railY, 5.05), "#8b95a6");
-  addBox(new THREE.Vector3(7.2, 1, 0.18), new THREE.Vector3(0, railY, 1.58), "#8b95a6");
+  addBox(new THREE.Vector3(0.18, 1, 5.2), new THREE.Vector3(-3.55, railY, 3.8), "#8b95a6");
+  addBox(new THREE.Vector3(0.18, 1, 5.2), new THREE.Vector3(3.55, railY, 3.8), "#8b95a6");
+  addBox(new THREE.Vector3(7.2, 1, 0.18), new THREE.Vector3(0, railY, 1.12), "#8b95a6");
 }
 
 function createCharacter(color: THREE.ColorRepresentation, name: string): THREE.Group {
@@ -297,11 +298,20 @@ function buildHouse(): void {
     addBox(new THREE.Vector3(2.1, 0.06, 1.4), new THREE.Vector3(7, y + 0.04, -8.3), "#70d6ff", false);
   }
 
-  addBox(new THREE.Vector3(6, 0.18, 2), new THREE.Vector3(0, 1.05, 2.9), "#5b6677");
-  addBox(new THREE.Vector3(6, 0.18, 2), new THREE.Vector3(0, 2.1, 5.5), "#667286");
-  addBox(new THREE.Vector3(6, 0.18, 2), new THREE.Vector3(0, 3.15, 8.1), "#748196");
-  addBox(new THREE.Vector3(0.2, 2.9, 0.2), new THREE.Vector3(-3.2, 1.55, 5.5), "#a1a9b8");
-  addBox(new THREE.Vector3(0.2, 2.9, 0.2), new THREE.Vector3(3.2, 1.55, 5.5), "#a1a9b8");
+  const stairStepCount = 6;
+  for (let step = 0; step < stairStepCount; step += 1) {
+    const progress = step / (stairStepCount - 1);
+    addBox(
+      new THREE.Vector3(5.8, 0.18, 1.05),
+      new THREE.Vector3(0, 0.18 + progress * floorHeights[1], stairBounds.minZ + progress * (stairBounds.maxZ - stairBounds.minZ)),
+      step === stairStepCount - 1 ? "#7d899b" : "#667286"
+    );
+  }
+  addBox(new THREE.Vector3(6.6, 0.18, 1.3), new THREE.Vector3(0, floorHeights[1] + 0.04, 7.35), "#7d899b");
+  addBox(new THREE.Vector3(0.2, 3.05, 0.2), new THREE.Vector3(-3.2, 1.62, 4.4), "#a1a9b8");
+  addBox(new THREE.Vector3(0.2, 3.05, 0.2), new THREE.Vector3(3.2, 1.62, 4.4), "#a1a9b8");
+  addBox(new THREE.Vector3(0.16, 2.85, 5.3), new THREE.Vector3(-3.2, 1.8, 4.35), "#8b95a6");
+  addBox(new THREE.Vector3(0.16, 2.85, 5.3), new THREE.Vector3(3.2, 1.8, 4.35), "#8b95a6");
 
   playerPosition.set(0, 0.65, 6);
   playerFloor = 0;
