@@ -108,20 +108,7 @@ const sounds = {
   engine: new Audio("assets/sound/engine-loop.wav")
 };
 sounds.engine.loop = true;
-const soundVolumes = {
-  countdown: 0.5,
-  start: 0.62,
-  turn: 0.46,
-  crash: 0.82,
-  win: 0.68,
-  draw: 0.62,
-  menu: 0.42,
-  engine: 0.24
-};
-Object.entries(sounds).forEach(([name, sound]) => {
-  sound.preload = "auto";
-  sound.volume = soundVolumes[name] ?? 0.5;
-});
+sounds.engine.volume = 0.26;
 
 let players;
 let occupied;
@@ -139,10 +126,6 @@ let movementTick = 0;
 let devLogFileHandle = null;
 let devLogFlushTimer = 0;
 let devLogServerWarned = false;
-let audioContext = null;
-let masterGain = null;
-let lastMoveSoundAt = 0;
-let lastDangerSoundAt = 0;
 const devLogLines = [];
 const planningMarkers = [];
 
@@ -290,71 +273,8 @@ function playSound(name) {
   if (!sound) {
     return;
   }
-  unlockAudio();
   sound.currentTime = 0;
   sound.play().catch(() => {});
-}
-
-function unlockAudio() {
-  if (audioContext) {
-    if (audioContext.state === "suspended") {
-      audioContext.resume().catch(() => {});
-    }
-    return;
-  }
-
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) {
-    return;
-  }
-
-  audioContext = new AudioContextClass();
-  masterGain = audioContext.createGain();
-  masterGain.gain.value = 0.18;
-  masterGain.connect(audioContext.destination);
-}
-
-function playTone({ frequency, endFrequency = frequency, duration = 0.08, type = "sine", gain = 0.18 }) {
-  unlockAudio();
-  if (!audioContext || !masterGain) {
-    return;
-  }
-
-  const now = audioContext.currentTime;
-  const oscillator = audioContext.createOscillator();
-  const toneGain = audioContext.createGain();
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(frequency, now);
-  oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, endFrequency), now + duration);
-  toneGain.gain.setValueAtTime(0.0001, now);
-  toneGain.gain.exponentialRampToValueAtTime(gain, now + 0.01);
-  toneGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  oscillator.connect(toneGain);
-  toneGain.connect(masterGain);
-  oscillator.start(now);
-  oscillator.stop(now + duration + 0.02);
-}
-
-function playMovePulse() {
-  const now = performance.now();
-  if (now - lastMoveSoundAt < 75) {
-    return;
-  }
-  lastMoveSoundAt = now;
-  playTone({ frequency: 88, endFrequency: 116, duration: 0.045, type: "square", gain: 0.055 });
-}
-
-function playDangerPulse() {
-  const now = performance.now();
-  if (now - lastDangerSoundAt < 420) {
-    return;
-  }
-  lastDangerSoundAt = now;
-  playTone({ frequency: 360, endFrequency: 170, duration: 0.16, type: "sawtooth", gain: 0.08 });
-}
-
-function playBotPulse() {
-  playTone({ frequency: 430, endFrequency: 520, duration: 0.055, type: "triangle", gain: 0.045 });
 }
 
 function createArena() {
@@ -599,24 +519,6 @@ function addGrid(position, direction) {
 
 function inBounds(position) {
   return Math.abs(position.x) <= HALF && Math.abs(position.z) <= HALF;
-}
-
-function isBlocked(position) {
-  return !inBounds(position) || occupied.has(positionKey(position));
-}
-
-function hasDangerAhead(player, steps = 3) {
-  for (let i = 1; i <= steps; i += 1) {
-    const position = {
-      x: player.position.x + player.pendingDirection.x * i,
-      y: 0,
-      z: player.position.z + player.pendingDirection.z * i
-    };
-    if (isBlocked(position)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function isOpposite(a, b) {
@@ -1360,13 +1262,8 @@ function stepSimulation() {
     const botDirection = chooseBotDirection();
     if (!players[1].pendingDirection.equals(botDirection)) {
       appendLog(`tick ${movementTick + 1}: P2 bot chose ${directionName(botDirection)} from ${formatGrid(players[1].position)}`, "key");
-      playBotPulse();
     }
     players[1].pendingDirection.copy(botDirection);
-  }
-
-  if (hasDangerAhead(players[0]) || (opponentMode === "human" && hasDangerAhead(players[1]))) {
-    playDangerPulse();
   }
 
   movementTick += 1;
@@ -1405,9 +1302,6 @@ function stepSimulation() {
       appendLog(`tick ${movementTick}: ${player.id.toUpperCase()} tried ${directionName(player.direction)} ${formatGrid(from)} -> ${formatGrid(to)} and crashed`, "crash");
     }
   });
-  if (crashed.size === 0) {
-    playMovePulse();
-  }
 
   players.forEach((player) => {
     if (crashed.has(player.id)) {
@@ -1686,7 +1580,6 @@ function onResize() {
 
 window.addEventListener("resize", onResize);
 window.addEventListener("keydown", (event) => {
-  unlockAudio();
   const rawKey = event.key === " " ? "Space" : event.key;
   appendLog(`key pressed: key="${rawKey}" code="${event.code}" repeat=${event.repeat} phase=${gamePhase}`, "key");
 
