@@ -110,6 +110,8 @@ const playerPosition = new THREE.Vector3(0, 0.65, 6);
 const tempDirection = new THREE.Vector3();
 const moveVector = new THREE.Vector3();
 const rayDirection = new THREE.Vector3();
+const forwardVector = new THREE.Vector3();
+const rightVector = new THREE.Vector3();
 let playerMesh: THREE.Group | undefined;
 
 function resize(): void {
@@ -360,7 +362,7 @@ function updateHud(): void {
     phase === "lobby"
       ? "Press Space to enter the selected map"
       : phase === "round"
-        ? "Move mouse to look around. WASD moves. Left click uses your role action."
+        ? "Click the canvas to capture the mouse. Move mouse to look. W/S moves forward/back."
         : "Round complete";
 
   votePanel.classList.toggle("hidden", phase !== "lobby");
@@ -387,6 +389,7 @@ function startRound(): void {
   assignRoles();
   buildHouse();
   spawnBots();
+  void input.requestPointerLock();
   showToast(`You are the ${playerRole}`);
   updateHud();
 }
@@ -461,9 +464,11 @@ function updatePlayer(dt: number): void {
     return;
   }
 
-  yaw -= input.pointer.movementX * 0.0026;
-  pitch += input.pointer.movementY * 0.0022;
-  pitch = THREE.MathUtils.clamp(pitch, -0.8, 0.55);
+  if (input.pointer.locked) {
+    yaw -= input.pointer.movementX * 0.0026;
+    pitch += input.pointer.movementY * 0.0022;
+    pitch = THREE.MathUtils.clamp(pitch, -0.8, 0.55);
+  }
 
   tempDirection.set(0, 0, 0);
   if (input.isKeyDown("KeyW")) tempDirection.z -= 1;
@@ -473,7 +478,14 @@ function updatePlayer(dt: number): void {
 
   if (tempDirection.lengthSq() > 0) {
     tempDirection.normalize();
-    moveVector.set(tempDirection.x, 0, tempDirection.z).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    forwardVector.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+    rightVector.set(Math.cos(yaw), 0, -Math.sin(yaw));
+    moveVector
+      .copy(forwardVector)
+      .multiplyScalar(-tempDirection.z)
+      .add(rightVector.multiplyScalar(tempDirection.x));
+    moveVector.y = 0;
+    moveVector.normalize();
     moveVector.multiplyScalar(4.2 * dt);
     moveActor(playerPosition, moveVector, playerFloor);
     if (playerMesh) {
@@ -481,13 +493,7 @@ function updatePlayer(dt: number): void {
     }
   }
 
-  if (playerPosition.x > -3.4 && playerPosition.x < 3.4 && playerPosition.z > 1.6 && playerPosition.z < 8.4) {
-    const progress = THREE.MathUtils.clamp((playerPosition.z - 1.6) / 6.8, 0, 1);
-    playerFloor = progress > 0.52 ? 1 : 0;
-    playerPosition.y = 0.65 + progress * floorHeights[1];
-  } else {
-    playerPosition.y = floorHeights[playerFloor] + 0.65;
-  }
+  playerPosition.y = floorHeights[playerFloor] + 0.65;
 
   if (playerMesh) {
     playerMesh.position.copy(playerPosition);
@@ -622,7 +628,11 @@ function update(dt: number): void {
     updateBots(dt);
     botMurdererLogic();
     if (input.wasMousePressed(0)) {
-      performAction();
+      if (!input.pointer.locked) {
+        void input.requestPointerLock();
+      } else {
+        performAction();
+      }
     }
     checkWinConditions();
   }
