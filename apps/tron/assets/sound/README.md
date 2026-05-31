@@ -10,3 +10,5 @@ Generated local WAV effects used by `game.js`.
 - `round-draw.wav`: draw cue
 - `menu-select.wav`: setup menu cue
 - `engine-loop.wav`: looping light-cycle engine bed
+
+`game.js` also creates short WebAudio cues for movement ticks, nearby danger, and bot turns so those reactive effects stay tightly synced to gameplay.
