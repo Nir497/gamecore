@@ -47,7 +47,6 @@ const minimapCanvas = document.querySelector("#minimapCanvas");
 const minimapContext = minimapCanvas.getContext("2d");
 const overlay = document.querySelector("#overlay");
 const panel = document.querySelector("#panel");
-const startButton = document.querySelector("#startButton");
 const p1ScoreEl = document.querySelector("#p1Score");
 const p2ScoreEl = document.querySelector("#p2Score");
 const p2NameLabel = document.querySelector("#p2NameLabel");
@@ -1342,13 +1341,9 @@ function endRound(crashed) {
   showPanel(`
     <p class="eyebrow">ROUND COMPLETE</p>
     <h1 class="${className}">${title}</h1>
-    <p class="lead">The final wall layout stays live on the board. Restart to clear the arena.</p>
-    <div class="button-row">
-      <button id="restartButton" class="primary-button" type="button">Restart</button>
-    </div>
-    <p class="hint">Space also restarts the round</p>
+    <p class="lead">Press Space to replay this mode, 1 for bot, or 2 for multiplayer.</p>
+    <p class="hint">After 1: press 3 for easy bot or 4 for hard bot</p>
   `);
-  document.querySelector("#restartButton").addEventListener("click", startSetup);
 }
 
 function submitGameOverScore() {
@@ -1375,124 +1370,74 @@ function hidePanel() {
   overlay.classList.add("hidden");
 }
 
-function startSetup() {
+function showModePrompt() {
   if (gamePhase === "ended") {
     submitGameOverScore();
   }
 
-  setPhase("setup");
+  running = false;
+  setPhase("idle");
   updateModeUi();
-  playSound("menu");
-  appendLog("setup opened from start/restart", "system");
+  roundStateEl.textContent = "IDLE";
+  matchModeEl.textContent = "SELECT MODE";
   showPanel(`
-    <p class="eyebrow">LINK SETUP</p>
-    <h1><span>CHOOSE</span> MODE</h1>
-    <p class="lead">Choose a human opponent or a bot. The bot reads the ground grid and turns before impact.</p>
-    <div class="button-row">
-      <button id="humanButton" class="choice-button" type="button">Human</button>
-      <button id="botButton" class="choice-button orange-choice" type="button">Bot</button>
-    </div>
-    <p class="hint">High scores are saved when you restart after a crash</p>
+    <p class="eyebrow">LIGHT CYCLE PROGRAM</p>
+    <h1><span>TRON</span> 3D</h1>
+    <p class="lead">Press 1 for bot mode, 2 for multiplayer.</p>
+    <p class="hint">After 1: press 3 for easy bot or 4 for hard bot</p>
   `);
-  document.querySelector("#humanButton").addEventListener("click", () => {
-    opponentMode = "human";
-    updateModeUi();
-    showControls();
-  });
-  document.querySelector("#botButton").addEventListener("click", () => {
-    opponentMode = "bot";
-    updateModeUi();
-    showDifficulty();
-  });
 }
 
-function showDifficulty() {
+function showBotPrompt() {
+  if (gamePhase === "ended") {
+    submitGameOverScore();
+  }
+
+  running = false;
+  opponentMode = "bot";
+  setPhase("bot-select");
+  updateModeUi();
+  roundStateEl.textContent = "BOT";
+  matchModeEl.textContent = "SELECT BOT";
   playSound("menu");
+  appendLog("bot mode selected: waiting for difficulty", "system");
   showPanel(`
     <p class="eyebrow">BOT PROGRAM</p>
-    <h1><span>BOT</span> SETUP</h1>
-    <p class="lead">Easy uses the Easy bot grid strategy. Hard uses the Hard-bot lookahead and territory strategy.</p>
-    <div class="button-row">
-      <button id="easyButton" class="choice-button" type="button">Easy</button>
-      <button id="hardButton" class="choice-button orange-choice" type="button">Hard</button>
-    </div>
+    <h1><span>BOT</span> MODE</h1>
+    <p class="lead">Press 3 for easy bot, or 4 for hard bot.</p>
+    <p class="hint">P1: W continues forward, A/D turn. The bot controls orange.</p>
   `);
-  document.querySelector("#easyButton").addEventListener("click", () => {
-    botDifficulty = "easy";
-    showControls();
-  });
-  document.querySelector("#hardButton").addEventListener("click", () => {
-    botDifficulty = "hard";
-    showControls();
-  });
 }
 
-function showControls() {
-  playSound("menu");
-  const p2Text = opponentMode === "human"
-    ? "Up continues forward. Left and Right turn relative to the rider. Down is blocked."
-    : "Bot steers on the same ground automatically at each tick.";
-  const p2Visual = opponentMode === "human"
-    ? `
-      <div class="control-image orange-keys" role="img" aria-label="Player 2 arrow key controls">
-        <span></span>
-        <kbd>UP</kbd>
-        <span></span>
-        <kbd>LEFT</kbd>
-        <kbd>DOWN</kbd>
-        <kbd>RIGHT</kbd>
-      </div>
-    `
-    : `
-      <div class="control-image bot-image" role="img" aria-label="Bot grid scanner">
-        <span class="scanner-line"></span>
-        <span class="scanner-node"></span>
-      </div>
-    `;
-  showPanel(`
-    <p class="eyebrow">CONTROL MAP</p>
-    <h1><span>GROUND</span> GRID</h1>
-    <div class="control-grid">
-      <div class="control-card">
-        <strong>Player 1</strong>
-        <div class="control-image cyan-keys" role="img" aria-label="Player 1 WASD controls">
-          <span></span>
-          <kbd>W</kbd>
-          <span></span>
-          <kbd>A</kbd>
-          <kbd>S</kbd>
-          <kbd>D</kbd>
-        </div>
-        <span>W continues forward. A and D turn relative to the rider. S is blocked.</span>
-      </div>
-      <div class="control-card">
-        <strong>${opponentLabel()}</strong>
-        ${p2Visual}
-        <span>${p2Text}</span>
-      </div>
-    </div>
-    <p class="lead">Cycles cannot stop or reverse. Every occupied cell becomes a light wall.</p>
-    <div class="button-row">
-      <button id="briefingButton" class="primary-button" type="button">Next</button>
-    </div>
-  `);
-  document.querySelector("#briefingButton").addEventListener("click", showBriefing);
+function startBotRound(difficulty) {
+  opponentMode = "bot";
+  botDifficulty = difficulty;
+  startSelectedRound();
 }
 
-function showBriefing() {
+function startMultiplayerRound() {
+  opponentMode = "human";
+  startSelectedRound();
+}
+
+function restartCurrentRound() {
+  if (opponentMode === "bot") {
+    startBotRound(botDifficulty);
+    return;
+  }
+  startMultiplayerRound();
+}
+
+function startSelectedRound() {
+  if (gamePhase === "ended") {
+    submitGameOverScore();
+  }
+
   playSound("menu");
   updateModeUi();
   matchModeEl.textContent = opponentMode === "bot" ? `BOT ${botDifficulty.toUpperCase()}` : "HUMAN DUEL";
-  appendLog(`mode selected: ${opponentMode === "bot" ? "bot" : "P2 human"}${opponentMode === "bot" ? ` ${botDifficulty}` : ""}`, "system");
-  showPanel(`
-    <p class="eyebrow">ROUND BRIEFING</p>
-    <h1><span>LAST</span> RIDER</h1>
-    <p class="lead">Both cycles move on the same tick. Boundary hits, trail hits, and head-on collisions are resolved together.</p>
-    <div class="button-row">
-      <button id="countdownButton" class="primary-button" type="button">Enter Grid</button>
-    </div>
-  `);
-  document.querySelector("#countdownButton").addEventListener("click", startCountdown);
+  appendLog(`round selected: ${opponentMode === "bot" ? `bot ${botDifficulty}` : "P2 human"}`, "system");
+  startCountdown();
 }
 
 function startCountdown() {
@@ -1638,11 +1583,51 @@ window.addEventListener("keydown", (event) => {
   const rawKey = event.key === " " ? "Space" : event.key;
   appendLog(`key pressed: key="${rawKey}" code="${event.code}" repeat=${event.repeat} phase=${gamePhase}`, "key");
 
+  if (event.code === "Digit1" || event.code === "Numpad1") {
+    event.preventDefault();
+    if (!running) {
+      showBotPrompt();
+      return;
+    }
+    appendLog("key action: 1 ignored during live round", "reject");
+    return;
+  }
+
+  if (event.code === "Digit2" || event.code === "Numpad2") {
+    event.preventDefault();
+    if (!running) {
+      startMultiplayerRound();
+      return;
+    }
+    appendLog("key action: 2 ignored during live round", "reject");
+    return;
+  }
+
+  if (event.code === "Digit3" || event.code === "Numpad3") {
+    event.preventDefault();
+    if (!running && gamePhase === "bot-select") {
+      startBotRound("easy");
+      return;
+    }
+    appendLog("key action: 3 requires bot mode selection first", "reject");
+    return;
+  }
+
+  if (event.code === "Digit4" || event.code === "Numpad4") {
+    event.preventDefault();
+    if (!running && gamePhase === "bot-select") {
+      startBotRound("hard");
+      return;
+    }
+    appendLog("key action: 4 requires bot mode selection first", "reject");
+    return;
+  }
+
   if (event.code === "Space") {
-    if (gamePhase === "idle" || gamePhase === "ended") {
+    if (gamePhase === "ended") {
       event.preventDefault();
-      appendLog(`key action: Space accepted for ${gamePhase === "idle" ? "start" : "restart"}`, "key");
-      startSetup();
+      appendLog("key action: Space accepted for restart", "key");
+      restartCurrentRound();
     } else {
       appendLog(`key action: Space ignored during ${gamePhase}`, "reject");
     }
@@ -1673,13 +1658,13 @@ window.addEventListener("keydown", (event) => {
   appendLog(`key action: ${player.id.toUpperCase()} ${mapped.control} -> ${directionName(direction)} ${result.accepted ? "accepted" : "rejected"} (${result.reason})`, result.accepted ? "key" : "reject");
 });
 
-startButton.addEventListener("click", startSetup);
 createArena();
 resetRound();
 createPlanningMarkers();
 updateModeUi();
 updateScores();
 updateOverviewCamera();
+showModePrompt();
 window.TronDevLog = {
   clear: clearEventLog,
   download: downloadDevLog,
