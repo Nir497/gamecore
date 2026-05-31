@@ -76,6 +76,12 @@ const mapOptions: MapOption[] = [
 
 const botNames = ["Riven", "Marlow", "Juno", "Vale", "Sable", "Pax", "Nyx"];
 const floorHeights = [0, 3.2];
+const stairBounds = {
+  minX: -3.2,
+  maxX: 3.2,
+  minZ: 1.6,
+  maxZ: 8.4
+};
 const botColors: Record<Role, string> = {
   Innocent: "#63b3ed",
   Sheriff: "#f6c453",
@@ -450,6 +456,13 @@ function moveActor(position: THREE.Vector3, delta: THREE.Vector3, floor: number)
   }
 }
 
+function getStairProgress(position: THREE.Vector3): number | undefined {
+  if (position.x < stairBounds.minX || position.x > stairBounds.maxX || position.z < stairBounds.minZ || position.z > stairBounds.maxZ) {
+    return undefined;
+  }
+  return THREE.MathUtils.clamp((position.z - stairBounds.minZ) / (stairBounds.maxZ - stairBounds.minZ), 0, 1);
+}
+
 function updateCamera(): void {
   const cameraDistance = 4.8;
   const cameraHeight = 0.95;
@@ -500,14 +513,13 @@ function updatePlayer(dt: number): void {
     }
   }
 
-  if (playerPosition.x > -3.4 && playerPosition.x < 3.4 && playerPosition.z > 1.6 && playerPosition.z < 8.4) {
-    if (playerPosition.z > 7.45) {
-      playerFloor = 1;
-    } else if (playerPosition.z < 2.25) {
-      playerFloor = 0;
-    }
+  const stairProgress = getStairProgress(playerPosition);
+  if (stairProgress !== undefined) {
+    playerFloor = stairProgress > 0.5 ? 1 : 0;
+    playerPosition.y = 0.65 + stairProgress * floorHeights[1];
+  } else {
+    playerPosition.y = floorHeights[playerFloor] + 0.65;
   }
-  playerPosition.y = floorHeights[playerFloor] + 0.65;
 
   if (playerMesh) {
     playerMesh.position.copy(playerPosition);
