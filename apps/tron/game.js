@@ -1,4 +1,12 @@
 import * as THREE from "three";
+import countdownUrl from "./assets/sound/countdown-beep.wav";
+import crashUrl from "./assets/sound/crash.wav";
+import engineUrl from "./assets/sound/engine-loop.wav";
+import menuUrl from "./assets/sound/menu-select.wav";
+import drawUrl from "./assets/sound/round-draw.wav";
+import startUrl from "./assets/sound/round-start.wav";
+import winUrl from "./assets/sound/round-win.wav";
+import turnUrl from "./assets/sound/turn-blip.wav";
 
 const ARENA_SIZE = 75;
 const HALF = Math.floor(ARENA_SIZE / 2);
@@ -98,14 +106,14 @@ orangeLight.position.set(10, 7, -8);
 scene.add(ambientLight, cyanLight, orangeLight);
 
 const sounds = {
-  countdown: new Audio("assets/sound/countdown-beep.wav"),
-  start: new Audio("assets/sound/round-start.wav"),
-  turn: new Audio("assets/sound/turn-blip.wav"),
-  crash: new Audio("assets/sound/crash.wav"),
-  win: new Audio("assets/sound/round-win.wav"),
-  draw: new Audio("assets/sound/round-draw.wav"),
-  menu: new Audio("assets/sound/menu-select.wav"),
-  engine: new Audio("assets/sound/engine-loop.wav")
+  countdown: new Audio(countdownUrl),
+  start: new Audio(startUrl),
+  turn: new Audio(turnUrl),
+  crash: new Audio(crashUrl),
+  win: new Audio(winUrl),
+  draw: new Audio(drawUrl),
+  menu: new Audio(menuUrl),
+  engine: new Audio(engineUrl)
 };
 sounds.engine.loop = true;
 sounds.engine.volume = 0.26;
