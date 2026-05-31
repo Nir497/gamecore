@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1020" role="img" aria-label="MM3 house mystery thumbnail">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#151923"/>
+      <stop offset="0.55" stop-color="#253142"/>
+      <stop offset="1" stop-color="#11151d"/>
+    </linearGradient>
+    <linearGradient id="window" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#70d6ff"/>
+      <stop offset="1" stop-color="#f6c453"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1020" fill="url(#sky)"/>
+  <rect x="74" y="686" width="752" height="160" rx="8" fill="#0c1017" opacity="0.72"/>
+  <path d="M146 451 450 216l304 235v376H146Z" fill="#2b3442"/>
+  <path d="M104 462 450 194l346 268-43 55-303-236-303 236Z" fill="#5d6470"/>
+  <rect x="228" y="552" width="126" height="118" rx="6" fill="url(#window)"/>
+  <rect x="546" y="552" width="126" height="118" rx="6" fill="url(#window)" opacity="0.88"/>
+  <rect x="385" y="634" width="130" height="193" rx="7" fill="#151923"/>
+  <circle cx="486" cy="732" r="8" fill="#f6c453"/>
+  <rect x="184" y="827" width="532" height="36" fill="#3c4656"/>
+  <path d="M218 917h464" stroke="#70d6ff" stroke-width="14" stroke-linecap="round" opacity="0.72"/>
+  <circle cx="185" cy="352" r="34" fill="#ef6f6c"/>
+  <circle cx="716" cy="327" r="26" fill="#f6c453"/>
+  <text x="80" y="126" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="86" font-weight="800">MM3</text>
+  <text x="84" y="178" fill="#b9c6d6" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">House Mystery</text>
+</svg>

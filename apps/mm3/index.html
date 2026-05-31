@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MM3</title>
+    <script type="module" src="./src/main.ts"></script>
+  </head>
+  <body>
+    <div class="game-shell">
+      <canvas id="game" width="1280" height="720"></canvas>
+      <section class="hud" aria-label="Game status">
+        <div class="top-strip">
+          <a class="home-link" href="../../">Gamecore</a>
+          <div class="status-group">
+            <span id="phase-label">Lobby</span>
+            <strong id="timer-label">Vote, then press Space</strong>
+          </div>
+          <div class="role-chip" id="role-chip">Role pending</div>
+        </div>
+
+        <div class="vote-panel" id="vote-panel" aria-label="Map voting">
+          <div>
+            <span class="kicker">Map Vote</span>
+            <h1>Choose the house</h1>
+          </div>
+          <div class="vote-grid" id="vote-grid"></div>
+        </div>
+
+        <div class="lower-hud">
+          <div class="prompt" id="prompt">Press Space to enter the selected map</div>
+          <div class="player-list" id="player-list" aria-label="Players"></div>
+        </div>
+
+        <div class="crosshair" id="crosshair" aria-hidden="true"></div>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </section>
+    </div>
+  </body>
+</html>
