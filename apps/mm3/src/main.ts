@@ -24,6 +24,7 @@ interface Bot {
   target: THREE.Vector3;
   speed: number;
   floor: number;
+  waitTime: number;
 }
 
 interface Obstacle {
@@ -118,6 +119,7 @@ const moveVector = new THREE.Vector3();
 const rayDirection = new THREE.Vector3();
 const forwardVector = new THREE.Vector3();
 const rightVector = new THREE.Vector3();
+const lineCheckPoint = new THREE.Vector3();
 let playerMesh: THREE.Group | undefined;
 
 function resize(): void {
@@ -193,8 +195,11 @@ function addFloorWithStairOpening(y: number): void {
 
   const railY = y + 0.52;
   addBox(new THREE.Vector3(0.18, 1, 5.2), new THREE.Vector3(-3.55, railY, 3.8), "#8b95a6");
-  addBox(new THREE.Vector3(0.18, 1, 5.2), new THREE.Vector3(3.55, railY, 3.8), "#8b95a6");
+  addBox(new THREE.Vector3(0.18, 1, 2.7), new THREE.Vector3(3.55, railY, 2.55), "#8b95a6");
   addBox(new THREE.Vector3(7.2, 1, 0.18), new THREE.Vector3(0, railY, 1.12), "#8b95a6");
+  addBox(new THREE.Vector3(0.22, 2.2, 0.18), new THREE.Vector3(3.55, y + 1.1, 6.45), "#aeb7c5");
+  addBox(new THREE.Vector3(0.22, 2.2, 0.18), new THREE.Vector3(3.55, y + 1.1, 8.35), "#aeb7c5");
+  addBox(new THREE.Vector3(0.24, 0.18, 2.1), new THREE.Vector3(3.55, y + 2.12, 7.4), "#aeb7c5");
 }
 
 function createCharacter(color: THREE.ColorRepresentation, name: string): THREE.Group {
@@ -290,7 +295,12 @@ function buildHouse(): void {
     addObstacle(new THREE.Vector3(0.34, 2.8, 18), new THREE.Vector3(11, y + 1.45, 0), "#3c4656", floor);
 
     addObstacle(new THREE.Vector3(0.28, 2.45, 5.9), new THREE.Vector3(-3.2, y + 1.35, -5.95), "#465265", floor);
-    addObstacle(new THREE.Vector3(0.28, 2.45, 5.9), new THREE.Vector3(3.2, y + 1.35, 5.95), "#465265", floor);
+    if (floor === 0) {
+      addObstacle(new THREE.Vector3(0.28, 2.45, 5.9), new THREE.Vector3(3.2, y + 1.35, 5.95), "#465265", floor);
+    } else {
+      addObstacle(new THREE.Vector3(0.28, 2.45, 2.2), new THREE.Vector3(3.2, y + 1.35, 4.1), "#465265", floor);
+      addObstacle(new THREE.Vector3(0.28, 2.45, 0.9), new THREE.Vector3(3.2, y + 1.35, 8.45), "#465265", floor);
+    }
     addObstacle(new THREE.Vector3(7.5, 2.45, 0.28), new THREE.Vector3(-7.2, y + 1.35, 1.1), "#465265", floor);
     addObstacle(new THREE.Vector3(7.5, 2.45, 0.28), new THREE.Vector3(7.2, y + 1.35, -1.1), "#465265", floor);
 
@@ -365,7 +375,8 @@ function spawnBots(): void {
       mesh,
       target: randomHousePoint(floor),
       speed: 1.2 + Math.random() * 0.75,
-      floor
+      floor,
+      waitTime: Math.random() * 1.5
     });
   }
 }
@@ -468,6 +479,23 @@ function collides(position: THREE.Vector3, floor: number): boolean {
   });
 }
 
+function hasLineOfSight(from: THREE.Vector3, to: THREE.Vector3, floor: number): boolean {
+  if (Math.abs(from.y - to.y) > 2.4) {
+    return false;
+  }
+
+  const distance = from.distanceTo(to);
+  const steps = Math.max(3, Math.ceil(distance / 0.22));
+  for (let step = 2; step < steps - 1; step += 1) {
+    const t = step / steps;
+    lineCheckPoint.lerpVectors(from, to, t);
+    if (collides(lineCheckPoint, floor)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function moveActor(position: THREE.Vector3, delta: THREE.Vector3, floor: number): void {
   const nextX = position.clone();
   nextX.x += delta.x;
@@ -487,6 +515,17 @@ function getStairProgress(position: THREE.Vector3): number | undefined {
     return undefined;
   }
   return THREE.MathUtils.clamp((position.z - stairBounds.minZ) / (stairBounds.maxZ - stairBounds.minZ), 0, 1);
+}
+
+function updateActorFloorAndHeight(position: THREE.Vector3, currentFloor: number): number {
+  const stairProgress = getStairProgress(position);
+  if (stairProgress !== undefined) {
+    position.y = 0.65 + stairProgress * floorHeights[1];
+    return stairProgress > 0.5 ? 1 : 0;
+  }
+
+  position.y = floorHeights[currentFloor] + 0.65;
+  return currentFloor;
 }
 
 function updateCamera(): void {
@@ -539,13 +578,7 @@ function updatePlayer(dt: number): void {
     }
   }
 
-  const stairProgress = getStairProgress(playerPosition);
-  if (stairProgress !== undefined) {
-    playerFloor = stairProgress > 0.5 ? 1 : 0;
-    playerPosition.y = 0.65 + stairProgress * floorHeights[1];
-  } else {
-    playerPosition.y = floorHeights[playerFloor] + 0.65;
-  }
+  playerFloor = updateActorFloorAndHeight(playerPosition, playerFloor);
 
   if (playerMesh) {
     playerMesh.position.copy(playerPosition);
@@ -561,17 +594,40 @@ function updateBots(dt: number): void {
       continue;
     }
 
+    const isMurderer = bot.record.role === "Murderer";
+    if (isMurderer) {
+      const livingTargets = [
+        ...(playerAlive && playerRole !== "Murderer" ? [{ position: playerPosition, floor: playerFloor }] : []),
+        ...bots
+          .filter((target) => target !== bot && target.record.alive && target.record.role !== "Murderer")
+          .map((target) => ({ position: target.mesh.position, floor: target.floor }))
+      ];
+      const sameFloorTargets = livingTargets.filter((target) => target.floor === bot.floor);
+      const closestTarget = sameFloorTargets.sort((a, b) => bot.mesh.position.distanceTo(a.position) - bot.mesh.position.distanceTo(b.position))[0];
+      if (closestTarget) {
+        bot.target.copy(closestTarget.position);
+      } else if (livingTargets.length > 0) {
+        const otherFloorTarget = livingTargets[0];
+        bot.target.set(0, floorHeights[bot.floor] + 0.65, otherFloorTarget.floor > bot.floor ? stairBounds.maxZ : stairBounds.minZ);
+      }
+    }
+
     const toTarget = bot.target.clone().sub(bot.mesh.position);
     if (toTarget.length() < 0.45) {
-      bot.floor = Math.random() > 0.72 ? 1 - bot.floor : bot.floor;
+      bot.waitTime -= dt;
+      if (bot.waitTime > 0 && !isMurderer) {
+        continue;
+      }
+      bot.floor = Math.random() > 0.86 ? 1 - bot.floor : bot.floor;
       bot.target = randomHousePoint(bot.floor);
+      bot.waitTime = 0.6 + Math.random() * 2.4;
       continue;
     }
 
     toTarget.y = 0;
-    toTarget.normalize().multiplyScalar(bot.speed * dt);
+    toTarget.normalize().multiplyScalar((isMurderer ? bot.speed * 1.22 : bot.speed) * dt);
     moveActor(bot.mesh.position, toTarget, bot.floor);
-    bot.mesh.position.y = floorHeights[bot.floor] + 0.66;
+    bot.floor = updateActorFloorAndHeight(bot.mesh.position, bot.floor);
     bot.mesh.lookAt(bot.target.x, bot.mesh.position.y, bot.target.z);
   }
 }
@@ -584,7 +640,7 @@ function nearestLivingBot(maxDistance: number): Bot | undefined {
       continue;
     }
     const distance = bot.mesh.position.distanceTo(playerPosition);
-    if (distance < nearestDistance) {
+    if (distance < nearestDistance && hasLineOfSight(playerPosition, bot.mesh.position, playerFloor)) {
       nearest = bot;
       nearestDistance = distance;
     }
@@ -634,10 +690,28 @@ function performAction(): void {
 
 function botMurdererLogic(): void {
   const murderer = bots.find((bot) => bot.record.role === "Murderer" && bot.record.alive);
-  if (!murderer || !playerAlive || playerRole === "Murderer" || murderer.floor !== playerFloor) {
+  if (!murderer) {
     return;
   }
-  if (murderer.mesh.position.distanceTo(playerPosition) < 1.45) {
+
+  for (const target of bots) {
+    if (target === murderer || !target.record.alive || target.record.role === "Murderer" || target.floor !== murderer.floor) {
+      continue;
+    }
+
+    if (murderer.mesh.position.distanceTo(target.mesh.position) < 1.35 && hasLineOfSight(murderer.mesh.position, target.mesh.position, murderer.floor)) {
+      target.record.alive = false;
+      target.mesh.visible = false;
+      showToast(`${murderer.record.name} eliminated ${target.record.name}`);
+      return;
+    }
+  }
+
+  if (!playerAlive || playerRole === "Murderer" || murderer.floor !== playerFloor) {
+    return;
+  }
+
+  if (murderer.mesh.position.distanceTo(playerPosition) < 1.45 && hasLineOfSight(murderer.mesh.position, playerPosition, playerFloor)) {
     playerAlive = false;
     players[0].alive = false;
     endRound("The murderer caught you.");
