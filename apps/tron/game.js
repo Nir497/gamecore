@@ -689,7 +689,7 @@ function controlFromKey(event) {
     return { playerIndex: 0, control: p1Map[key] };
   }
   if (p2Map[key]) {
-    return { playerIndex: 1, control: p2Map[key] };
+    return { playerIndex: opponentMode === "bot" ? 0 : 1, control: p2Map[key] };
   }
   return null;
 }
@@ -1405,7 +1405,7 @@ function showBotPrompt() {
     <p class="eyebrow">BOT PROGRAM</p>
     <h1><span>BOT</span> MODE</h1>
     <p class="lead">Press 3 for easy bot, or 4 for hard bot.</p>
-    <p class="hint">P1: W continues forward, A/D turn. The bot controls orange.</p>
+    <p class="hint">P1: WASD or arrows. The bot controls orange.</p>
   `);
 }
 
