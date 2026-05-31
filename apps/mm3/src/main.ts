@@ -184,6 +184,18 @@ function addObstacle(size: THREE.Vector3, position: THREE.Vector3, color: THREE.
   });
 }
 
+function addFloorWithStairOpening(y: number): void {
+  addBox(new THREE.Vector3(22, 0.22, 10.4), new THREE.Vector3(0, y, -3.8), "#323b4a", false);
+  addBox(new THREE.Vector3(7.4, 0.22, 7.2), new THREE.Vector3(-7.3, y, 5.4), "#323b4a", false);
+  addBox(new THREE.Vector3(7.4, 0.22, 7.2), new THREE.Vector3(7.3, y, 5.4), "#323b4a", false);
+  addBox(new THREE.Vector3(22, 0.22, 0.8), new THREE.Vector3(0, y, 8.6), "#323b4a", false);
+
+  const railY = y + 0.52;
+  addBox(new THREE.Vector3(0.18, 1, 6.9), new THREE.Vector3(-3.55, railY, 5.05), "#8b95a6");
+  addBox(new THREE.Vector3(0.18, 1, 6.9), new THREE.Vector3(3.55, railY, 5.05), "#8b95a6");
+  addBox(new THREE.Vector3(7.2, 1, 0.18), new THREE.Vector3(0, railY, 1.58), "#8b95a6");
+}
+
 function createCharacter(color: THREE.ColorRepresentation, name: string): THREE.Group {
   const group = new THREE.Group();
   group.name = name;
@@ -266,7 +278,11 @@ function buildHouse(): void {
 
   for (const floor of [0, 1]) {
     const y = floorHeights[floor];
-    addBox(new THREE.Vector3(22, 0.22, 18), new THREE.Vector3(0, y, 0), floor === 0 ? "#293241" : "#323b4a", false);
+    if (floor === 0) {
+      addBox(new THREE.Vector3(22, 0.22, 18), new THREE.Vector3(0, y, 0), "#293241", false);
+    } else {
+      addFloorWithStairOpening(y);
+    }
     addObstacle(new THREE.Vector3(22, 2.8, 0.34), new THREE.Vector3(0, y + 1.45, -9), "#3c4656", floor);
     addObstacle(new THREE.Vector3(22, 2.8, 0.34), new THREE.Vector3(0, y + 1.45, 9), "#3c4656", floor);
     addObstacle(new THREE.Vector3(0.34, 2.8, 18), new THREE.Vector3(-11, y + 1.45, 0), "#3c4656", floor);
