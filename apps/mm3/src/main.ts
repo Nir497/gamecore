@@ -125,6 +125,12 @@ function resize(): void {
 window.addEventListener("resize", resize);
 resize();
 
+canvas.addEventListener("click", () => {
+  if (phase === "round" && !input.pointer.locked) {
+    void input.requestPointerLock();
+  }
+});
+
 function showToast(message: string): void {
   toast.textContent = message;
   toast.classList.add("visible");
@@ -445,17 +451,18 @@ function moveActor(position: THREE.Vector3, delta: THREE.Vector3, floor: number)
 }
 
 function updateCamera(): void {
-  const cameraDistance = 5.6;
-  const cameraHeight = 2.4;
-  const lookTarget = playerPosition.clone().add(new THREE.Vector3(0, 1.12, 0));
+  const cameraDistance = 4.8;
+  const cameraHeight = 0.95;
+  const lookTarget = playerPosition.clone().add(new THREE.Vector3(0, 1.04, 0));
   const horizontalDistance = cameraDistance * Math.cos(Math.abs(pitch));
   const cameraOffset = new THREE.Vector3(
     Math.sin(yaw) * horizontalDistance,
-    cameraHeight + Math.sin(-pitch) * 2.6,
+    cameraHeight + Math.sin(-pitch) * 0.85,
     Math.cos(yaw) * horizontalDistance
   );
 
   world.camera.position.copy(lookTarget).add(cameraOffset);
+  world.camera.position.y = THREE.MathUtils.clamp(world.camera.position.y, floorHeights[playerFloor] + 1.35, floorHeights[playerFloor] + 2.5);
   world.camera.lookAt(lookTarget);
 }
 
@@ -464,7 +471,7 @@ function updatePlayer(dt: number): void {
     return;
   }
 
-  if (input.pointer.locked) {
+  if (input.pointer.movementX !== 0 || input.pointer.movementY !== 0) {
     yaw -= input.pointer.movementX * 0.0026;
     pitch += input.pointer.movementY * 0.0022;
     pitch = THREE.MathUtils.clamp(pitch, -0.8, 0.55);
@@ -493,6 +500,13 @@ function updatePlayer(dt: number): void {
     }
   }
 
+  if (playerPosition.x > -3.4 && playerPosition.x < 3.4 && playerPosition.z > 1.6 && playerPosition.z < 8.4) {
+    if (playerPosition.z > 7.45) {
+      playerFloor = 1;
+    } else if (playerPosition.z < 2.25) {
+      playerFloor = 0;
+    }
+  }
   playerPosition.y = floorHeights[playerFloor] + 0.65;
 
   if (playerMesh) {
