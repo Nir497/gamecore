@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1020" role="img" aria-label="MM3 house mystery thumbnail">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1020" role="img" aria-label="Murder Mystery 3 house mystery thumbnail">
   <defs>
     <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0" stop-color="#151923"/>
@@ -22,6 +22,6 @@
   <path d="M218 917h464" stroke="#70d6ff" stroke-width="14" stroke-linecap="round" opacity="0.72"/>
   <circle cx="185" cy="352" r="34" fill="#ef6f6c"/>
   <circle cx="716" cy="327" r="26" fill="#f6c453"/>
-  <text x="80" y="126" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="86" font-weight="800">MM3</text>
+  <text x="80" y="126" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="800">Murder Mystery 3</text>
   <text x="84" y="178" fill="#b9c6d6" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">House Mystery</text>
 </svg>
